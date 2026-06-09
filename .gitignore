@@ -6,3 +6,7 @@
 .angular
 
 __screenshots__/
+
+node_modules
+.env
+dist/

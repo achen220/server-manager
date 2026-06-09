@@ -2,15 +2,55 @@
   "name": "server-manager",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "dist/desktop/main.js",
   "scripts": {
-    "start": "nx run-many -t serve -p frontend backend --parallel",
+    "start": "nx run desktop:serve",
     "start:ui": "nx serve frontend",
     "start:api": "nx serve backend",
-    "build": "nx run-many -t build -p frontend backend --parallel",
-    "build:ui": "nx build frontend",
-    "api": "nx build backend",
+    "build": "nx run-many -t build -p frontend backend desktop --parallel",
+    "build:frontend": "nx build frontend",
+    "build:backend": "nx build backend",
+    "build:desktop": "nx build desktop",
+    "package": "nx run desktop:package",
     "test": "nx run-many -t test --parallel"
+  },
+  "build": {
+    "appId": "com.server-manager.app",
+    "productName": "Server Manager",
+    "directories": {
+      "output": "dist/electron-dist"
+    },
+    "files": [
+      "dist/desktop/**",
+      "dist/frontend/**",
+      "dist/backend/**"
+    ],
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        }
+      ],
+      "category": "public.app-category.developer-tools"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
   },
   "repository": {
     "type": "git",
@@ -50,8 +90,13 @@
     "@swc/core": "~1.15.5",
     "@swc/helpers": "~0.5.18",
     "@types/node": "20.19.9",
+    "@types/ssh2": "^1.15.5",
     "@typescript-eslint/utils": "^8.40.0",
     "angular-eslint": "^21.2.0",
+    "concurrently": "^10.0.3",
+    "cross-env": "^10.1.0",
+    "electron": "^42.3.3",
+    "electron-builder": "^26.8.1",
     "eslint": "^9.8.0",
     "eslint-config-prettier": "^10.0.0",
     "eslint-plugin-playwright": "^1.6.2",
@@ -62,6 +107,7 @@
     "typescript": "~5.9.2",
     "typescript-eslint": "^8.40.0",
     "vitest": "^4.0.8",
+    "wait-on": "^9.0.10",
     "webpack-cli": "^5.1.4"
   },
   "dependencies": {
@@ -72,10 +118,12 @@
     "@angular/platform-browser": "~21.2.0",
     "@angular/router": "~21.2.0",
     "@nestjs/common": "^11.0.0",
+    "@nestjs/config": "^4.0.4",
     "@nestjs/core": "^11.0.0",
     "@nestjs/platform-express": "^11.0.0",
     "axios": "^1.6.0",
     "reflect-metadata": "^0.1.13",
-    "rxjs": "~7.8.0"
+    "rxjs": "~7.8.0",
+    "ssh2": "^1.17.0"
   }
 }

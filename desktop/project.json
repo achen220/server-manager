@@ -1,0 +1,39 @@
+{
+  "name": "desktop",
+  "projectType": "application",
+  "sourceRoot": "desktop/src",
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc -p desktop/tsconfig.json",
+        "cwd": "{workspaceRoot}"
+      },
+      "outputs": ["{workspaceRoot}/dist/desktop"]
+    },
+    "serve": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["build"],
+      "options": {
+        "commands": [
+          "nx serve backend",
+          "nx serve frontend",
+          "npx wait-on http://localhost:4200 http://localhost:3000/api && cross-env NODE_ENV=development npx electron ."
+        ],
+        "parallel": true,
+        "color": true
+      }
+    },
+    "package": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "nx run-many -t build -p frontend backend desktop --parallel",
+          "npx electron-builder --config"
+        ],
+        "parallel": false,
+        "cwd": "{workspaceRoot}"
+      }
+    }
+  }
+}
