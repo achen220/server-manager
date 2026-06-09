@@ -15,7 +15,7 @@ import { authInterceptor } from './core/auth.interceptor';
 const AppTheme = definePreset(Aura, {
   semantic: {
     primary: {
-      50:  '#f0f9ff',
+      50: '#f0f9ff',
       100: '#e0f2fe',
       200: '#bae6fd',
       300: '#7dd3fc',
@@ -30,22 +30,22 @@ const AppTheme = definePreset(Aura, {
     colorScheme: {
       light: {
         surface: {
-          ground:  '{surface.50}',
+          ground: '{surface.50}',
           section: '{surface.0}',
-          card:    '{surface.0}',
+          card: '{surface.0}',
           overlay: '{surface.0}',
-          border:  '{surface.200}',
-          hover:   '{surface.100}',
+          border: '{surface.200}',
+          hover: '{surface.100}',
         },
       },
       dark: {
         surface: {
-          ground:  '#0f172a',
+          ground: '#0f172a',
           section: '#1e293b',
-          card:    '#1e293b',
+          card: '#1e293b',
           overlay: '#1e293b',
-          border:  '#334155',
-          hover:   '#334155',
+          border: '#334155',
+          hover: '#334155',
         },
       },
     },

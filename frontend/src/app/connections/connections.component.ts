@@ -1,15 +1,162 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ConfirmationService, MessageService } from 'primeng/api';
+import { ButtonModule } from 'primeng/button';
+import { CardModule } from 'primeng/card';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { DialogModule } from 'primeng/dialog';
+import { InputNumberModule } from 'primeng/inputnumber';
+import { InputTextModule } from 'primeng/inputtext';
+import { PasswordModule } from 'primeng/password';
+import { SelectButtonModule } from 'primeng/selectbutton';
+import { TagModule } from 'primeng/tag';
+import { ToastModule } from 'primeng/toast';
+import { Connection } from './connection.model';
+import { ConnectionsApiService } from './connections.api.service';
 
 @Component({
   selector: 'app-connections',
   standalone: true,
-  imports: [CommonModule],
-  template: `
-    <div style="padding: 2rem">
-      <h1>Connections</h1>
-      <p>Your SSH server connections will appear here.</p>
-    </div>
-  `,
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    ButtonModule,
+    CardModule,
+    DialogModule,
+    InputTextModule,
+    InputNumberModule,
+    PasswordModule,
+    SelectButtonModule,
+    TagModule,
+    ToastModule,
+    ConfirmDialogModule,
+  ],
+  providers: [MessageService, ConfirmationService],
+  templateUrl: './connections.component.html',
+  styleUrl: './connections.component.scss',
 })
-export class ConnectionsComponent {}
+export class ConnectionsComponent implements OnInit {
+  private readonly api = inject(ConnectionsApiService);
+  private readonly fb = inject(FormBuilder);
+  private readonly msg = inject(MessageService);
+  private readonly confirm = inject(ConfirmationService);
+
+  connections = signal<Connection[]>([]);
+  loading = signal(false);
+  dialogVisible = false;
+  editingId: string | null = null;
+
+  readonly authOptions = [
+    { label: 'Password', value: 'password' },
+    { label: 'SSH Key', value: 'key' },
+  ];
+
+  form = this.fb.group({
+    name: ['', Validators.required],
+    host: ['', Validators.required],
+    port: [22, [Validators.required, Validators.min(1), Validators.max(65535)]],
+    username: ['', Validators.required],
+    authType: ['password' as 'password' | 'key', Validators.required],
+    password: [''],
+    privateKeyPath: [''],
+    description: [''],
+  });
+
+  get isPasswordAuth(): boolean {
+    return this.form.value.authType === 'password';
+  }
+
+  ngOnInit(): void {
+    this.load();
+  }
+
+  load(): void {
+    this.loading.set(true);
+    this.api.getAll().subscribe({
+      next: (list) => {
+        this.connections.set(list);
+        this.loading.set(false);
+      },
+      error: () => this.loading.set(false),
+    });
+  }
+
+  openNew(): void {
+    this.editingId = null;
+    this.form.reset({ port: 22, authType: 'password' });
+    this.dialogVisible = true;
+  }
+
+  openEdit(conn: Connection): void {
+    this.editingId = conn.id;
+    this.form.patchValue({ ...conn, password: '' });
+    this.dialogVisible = true;
+  }
+
+  save(): void {
+    if (this.form.invalid) return;
+    const val = this.form.value;
+    const payload = {
+      name: val.name!,
+      host: val.host!,
+      port: Number(val.port),
+      username: val.username!,
+      authType: val.authType!,
+      password:
+        val.authType === 'password' ? val.password || undefined : undefined,
+      privateKeyPath:
+        val.authType === 'key' ? val.privateKeyPath || undefined : undefined,
+      description: val.description || undefined,
+    };
+
+    const req$ = this.editingId
+      ? this.api.update(this.editingId, payload)
+      : this.api.create(payload);
+
+    req$.subscribe({
+      next: () => {
+        this.dialogVisible = false;
+        this.msg.add({
+          severity: 'success',
+          summary: this.editingId ? 'Updated' : 'Created',
+          detail: `"${payload.name}" saved`,
+        });
+        this.load();
+      },
+      error: (e) =>
+        this.msg.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: e.message,
+        }),
+    });
+  }
+
+  confirmDelete(conn: Connection): void {
+    this.confirm.confirm({
+      message: `Delete "${conn.name}"?`,
+      header: 'Delete Connection',
+      icon: 'pi pi-trash',
+      acceptButtonStyleClass: 'p-button-danger',
+      accept: () => {
+        this.api.delete(conn.id).subscribe({
+          next: () => {
+            this.msg.add({
+              severity: 'success',
+              summary: 'Deleted',
+              detail: `"${conn.name}" removed`,
+            });
+            this.load();
+          },
+          error: (e) =>
+            this.msg.add({
+              severity: 'error',
+              summary: 'Error',
+              detail: e.message,
+            }),
+        });
+      },
+    });
+  }
+}

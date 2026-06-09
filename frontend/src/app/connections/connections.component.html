@@ -1,0 +1,150 @@
+<p-toast />
+<p-confirmdialog />
+
+<div class="connections-page">
+  <div class="page-header">
+    <div>
+      <h1>Connections</h1>
+      <p>Manage your SSH server connections</p>
+    </div>
+    <p-button label="New Connection" icon="pi pi-plus" (onClick)="openNew()" />
+  </div>
+
+  @if (loading()) {
+    <div class="empty-state">
+      <i class="pi pi-spin pi-spinner" style="font-size: 2rem"></i>
+    </div>
+  } @else if (connections().length === 0) {
+    <div class="empty-state">
+      <i class="pi pi-server" style="font-size: 3rem; color: var(--p-text-muted-color)"></i>
+      <h3>No connections yet</h3>
+      <p>Add your first SSH server to get started</p>
+      <p-button label="Add Connection" icon="pi pi-plus" (onClick)="openNew()" />
+    </div>
+  } @else {
+    <div class="connections-grid">
+      @for (conn of connections(); track conn.id) {
+        <p-card styleClass="connection-card">
+          <div class="card-body">
+            <div class="card-info">
+              <i class="pi pi-server card-icon"></i>
+              <div>
+                <h3>{{ conn.name }}</h3>
+                <p class="host-line">{{ conn.username }}&#64;{{ conn.host }}:{{ conn.port }}</p>
+                @if (conn.description) {
+                  <p class="description">{{ conn.description }}</p>
+                }
+              </div>
+            </div>
+            <p-tag
+              [value]="conn.authType === 'password' ? 'Password' : 'SSH Key'"
+              [severity]="conn.authType === 'password' ? 'warn' : 'success'"
+            />
+          </div>
+          <div class="card-actions">
+            <p-button
+              icon="pi pi-pencil"
+              [text]="true"
+              size="small"
+              (onClick)="openEdit(conn)"
+              title="Edit"
+            />
+            <p-button
+              icon="pi pi-trash"
+              [text]="true"
+              size="small"
+              severity="danger"
+              (onClick)="confirmDelete(conn)"
+              title="Delete"
+            />
+          </div>
+        </p-card>
+      }
+    </div>
+  }
+</div>
+
+<!-- Create / Edit Dialog -->
+<p-dialog
+  [(visible)]="dialogVisible"
+  [header]="editingId ? 'Edit Connection' : 'New Connection'"
+  [modal]="true"
+  [style]="{ width: '480px' }"
+  [draggable]="false"
+  [resizable]="false"
+>
+  <form [formGroup]="form" class="conn-form">
+    <div class="field">
+      <label for="name">Display Name *</label>
+      <input pInputText id="name" formControlName="name" placeholder="My Server" class="w-full" />
+    </div>
+
+    <div class="field-row">
+      <div class="field flex-3">
+        <label for="host">Host *</label>
+        <input pInputText id="host" formControlName="host" placeholder="192.168.1.10" class="w-full" />
+      </div>
+      <div class="field flex-1">
+        <label for="port">Port *</label>
+        <p-inputnumber
+          inputId="port"
+          formControlName="port"
+          [min]="1"
+          [max]="65535"
+          [useGrouping]="false"
+          inputStyleClass="w-full"
+        />
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="username">Username *</label>
+      <input pInputText id="username" formControlName="username" placeholder="root" class="w-full" />
+    </div>
+
+    <div class="field">
+      <label>Authentication</label>
+      <p-selectbutton
+        formControlName="authType"
+        [options]="authOptions"
+        optionLabel="label"
+        optionValue="value"
+      />
+    </div>
+
+    @if (isPasswordAuth) {
+      <div class="field">
+        <label for="password">Password</label>
+        <p-password
+          inputId="password"
+          formControlName="password"
+          [feedback]="false"
+          [toggleMask]="true"
+          [placeholder]="editingId ? 'Leave blank to keep existing' : 'Password'"
+          styleClass="w-full"
+          inputStyleClass="w-full"
+        />
+      </div>
+    } @else {
+      <div class="field">
+        <label for="keyPath">Private Key Path</label>
+        <input pInputText id="keyPath" formControlName="privateKeyPath" placeholder="~/.ssh/id_rsa" class="w-full" />
+      </div>
+    }
+
+    <div class="field">
+      <label for="description">Description</label>
+      <input pInputText id="description" formControlName="description" placeholder="Optional note" class="w-full" />
+    </div>
+  </form>
+
+  <ng-template pTemplate="footer">
+    <p-button label="Cancel" [text]="true" (onClick)="dialogVisible = false" />
+    <p-button
+      [label]="editingId ? 'Save Changes' : 'Create'"
+      icon="pi pi-check"
+      [disabled]="form.invalid"
+      (onClick)="save()"
+    />
+  </ng-template>
+</p-dialog>
