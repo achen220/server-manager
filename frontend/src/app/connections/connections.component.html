@@ -16,10 +16,17 @@
     </div>
   } @else if (connections().length === 0) {
     <div class="empty-state">
-      <i class="pi pi-server" style="font-size: 3rem; color: var(--p-text-muted-color)"></i>
+      <i
+        class="pi pi-server"
+        style="font-size: 3rem; color: var(--p-text-muted-color)"
+      ></i>
       <h3>No connections yet</h3>
       <p>Add your first SSH server to get started</p>
-      <p-button label="Add Connection" icon="pi pi-plus" (onClick)="openNew()" />
+      <p-button
+        label="Add Connection"
+        icon="pi pi-plus"
+        (onClick)="openNew()"
+      />
     </div>
   } @else {
     <div class="connections-grid">
@@ -30,7 +37,9 @@
               <i class="pi pi-server card-icon"></i>
               <div>
                 <h3>{{ conn.name }}</h3>
-                <p class="host-line">{{ conn.username }}&#64;{{ conn.host }}:{{ conn.port }}</p>
+                <p class="host-line">
+                  {{ conn.username }}&#64;{{ conn.host }}:{{ conn.port }}
+                </p>
                 @if (conn.description) {
                   <p class="description">{{ conn.description }}</p>
                 }
@@ -76,13 +85,25 @@
   <form [formGroup]="form" class="conn-form">
     <div class="field">
       <label for="name">Display Name *</label>
-      <input pInputText id="name" formControlName="name" placeholder="My Server" class="w-full" />
+      <input
+        pInputText
+        id="name"
+        formControlName="name"
+        placeholder="My Server"
+        class="w-full"
+      />
     </div>
 
     <div class="field-row">
       <div class="field flex-3">
         <label for="host">Host *</label>
-        <input pInputText id="host" formControlName="host" placeholder="192.168.1.10" class="w-full" />
+        <input
+          pInputText
+          id="host"
+          formControlName="host"
+          placeholder="192.168.1.10"
+          class="w-full"
+        />
       </div>
       <div class="field flex-1">
         <label for="port">Port *</label>
@@ -99,7 +120,13 @@
 
     <div class="field">
       <label for="username">Username *</label>
-      <input pInputText id="username" formControlName="username" placeholder="root" class="w-full" />
+      <input
+        pInputText
+        id="username"
+        formControlName="username"
+        placeholder="root"
+        class="w-full"
+      />
     </div>
 
     <div class="field">
@@ -120,7 +147,9 @@
           formControlName="password"
           [feedback]="false"
           [toggleMask]="true"
-          [placeholder]="editingId ? 'Leave blank to keep existing' : 'Password'"
+          [placeholder]="
+            editingId ? 'Leave blank to keep existing' : 'Password'
+          "
           styleClass="w-full"
           inputStyleClass="w-full"
         />
@@ -128,13 +157,25 @@
     } @else {
       <div class="field">
         <label for="keyPath">Private Key Path</label>
-        <input pInputText id="keyPath" formControlName="privateKeyPath" placeholder="~/.ssh/id_rsa" class="w-full" />
+        <input
+          pInputText
+          id="keyPath"
+          formControlName="privateKeyPath"
+          placeholder="~/.ssh/id_rsa"
+          class="w-full"
+        />
       </div>
     }
 
     <div class="field">
       <label for="description">Description</label>
-      <input pInputText id="description" formControlName="description" placeholder="Optional note" class="w-full" />
+      <input
+        pInputText
+        id="description"
+        formControlName="description"
+        placeholder="Optional note"
+        class="w-full"
+      />
     </div>
   </form>
 

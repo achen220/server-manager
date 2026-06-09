@@ -18,7 +18,10 @@ import { AppService } from './app.service';
         url: config.getOrThrow<string>('DATABASE_URL'),
         entities: [ConnectionEntity],
         synchronize: true, // auto-creates table; set false after first run in production
-        ssl: config.get('DATABASE_SSL') === 'true' ? { rejectUnauthorized: false } : false,
+        ssl:
+          config.get('DATABASE_SSL') === 'true'
+            ? { rejectUnauthorized: false }
+            : false,
       }),
     }),
     AuthModule,

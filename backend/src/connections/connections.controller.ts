@@ -12,8 +12,8 @@ import {
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { JwtPayload } from '../auth/jwt.strategy';
-import { CreateConnectionDto } from './create-connection.dto';
 import { ConnectionsService } from './connections.service';
+import { CreateConnectionDto } from './create-connection.dto';
 
 interface AuthRequest {
   user: JwtPayload;
