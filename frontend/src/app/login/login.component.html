@@ -1,0 +1,25 @@
+<div class="login-wrapper">
+  <p-card styleClass="login-card">
+    <ng-template pTemplate="header">
+      <div class="login-header">
+        <i class="pi pi-server login-icon"></i>
+        <h1>Server Manager</h1>
+        <p>Sign in to manage your SSH servers</p>
+      </div>
+    </ng-template>
+
+    <div class="login-body">
+      @if (errorMessage) {
+        <p-message severity="error" [text]="errorMessage" styleClass="w-full" />
+      }
+
+      <p-button
+        label="Continue with Google"
+        icon="pi pi-google"
+        [loading]="loading"
+        (onClick)="signInWithGoogle()"
+        styleClass="w-full google-btn"
+      />
+    </div>
+  </p-card>
+</div>

@@ -1,1 +1,15 @@
-/* You can add global styles to this file, and also import other style files */
+@use 'primeicons/primeicons.css';
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  height: 100%;
+  font-family: var(--font-family);
+  background-color: var(--p-surface-ground);
+  color: var(--p-text-color);
+}

@@ -90,6 +90,7 @@
     "@swc/core": "~1.15.5",
     "@swc/helpers": "~0.5.18",
     "@types/node": "20.19.9",
+    "@types/passport-jwt": "^4.0.1",
     "@types/ssh2": "^1.15.5",
     "@typescript-eslint/utils": "^8.40.0",
     "angular-eslint": "^21.2.0",
@@ -111,6 +112,7 @@
     "webpack-cli": "^5.1.4"
   },
   "dependencies": {
+    "@angular/animations": "^21.2.16",
     "@angular/common": "~21.2.0",
     "@angular/compiler": "~21.2.0",
     "@angular/core": "~21.2.0",
@@ -120,8 +122,17 @@
     "@nestjs/common": "^11.0.0",
     "@nestjs/config": "^4.0.4",
     "@nestjs/core": "^11.0.0",
+    "@nestjs/jwt": "^11.0.2",
+    "@nestjs/passport": "^11.0.5",
     "@nestjs/platform-express": "^11.0.0",
+    "@primeng/themes": "^21.0.4",
+    "@primeuix/themes": "^2.0.3",
+    "@supabase/supabase-js": "^2.108.0",
     "axios": "^1.6.0",
+    "passport": "^0.7.0",
+    "passport-jwt": "^4.0.1",
+    "primeicons": "^7.0.0",
+    "primeng": "^21.1.9",
     "reflect-metadata": "^0.1.13",
     "rxjs": "~7.8.0",
     "ssh2": "^1.17.0"
