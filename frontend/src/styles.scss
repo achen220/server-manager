@@ -1,15 +1,22 @@
 @use 'primeicons/primeicons.css';
 
-* {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
+html {
+  // Smooth colour transitions when toggling dark/light
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
 html,
 body {
   height: 100%;
-  font-family: var(--font-family);
+  font-family: var(--p-font-family, system-ui, sans-serif);
   background-color: var(--p-surface-ground);
   color: var(--p-text-color);
 }

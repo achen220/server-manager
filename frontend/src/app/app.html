@@ -1,1 +1,9 @@
+<button
+  class="theme-toggle"
+  [title]="theme.isDark() ? 'Switch to light mode' : 'Switch to dark mode'"
+  (click)="theme.toggle()"
+>
+  <i [class]="theme.isDark() ? 'pi pi-sun' : 'pi pi-moon'"></i>
+</button>
+
 <router-outlet></router-outlet>
