@@ -1,9 +1,9 @@
 import { Injectable } from '@angular/core';
 import {
-  createClient,
-  SupabaseClient,
-  Session,
   AuthChangeEvent,
+  createClient,
+  Session,
+  SupabaseClient,
 } from '@supabase/supabase-js';
 import { environment } from '../../environments/environment';
 
@@ -14,7 +14,7 @@ export class SupabaseService {
   constructor() {
     this.supabase = createClient(
       environment.supabaseUrl,
-      environment.supabaseAnonKey
+      environment.supabaseAnonKey,
     );
   }
 
@@ -38,7 +38,7 @@ export class SupabaseService {
   }
 
   onAuthStateChange(
-    callback: (event: AuthChangeEvent, session: Session | null) => void
+    callback: (event: AuthChangeEvent, session: Session | null) => void,
   ) {
     return this.supabase.auth.onAuthStateChange(callback);
   }
