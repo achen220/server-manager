@@ -12,7 +12,8 @@
     "build:backend": "nx build backend",
     "build:desktop": "nx build desktop",
     "package": "nx run desktop:package",
-    "test": "nx run-many -t test --parallel"
+    "test": "nx run-many -t test --parallel",
+    "db:start": "./scripts/start-db.sh"
   },
   "build": {
     "appId": "com.server-manager.app",
