@@ -1,0 +1,22 @@
+<div class="terminal-page">
+  <div class="terminal-header">
+    <div class="header-left">
+      <i class="pi pi-server"></i>
+      <span>Connected to <strong>{{ connectionName }}</strong></span>
+    </div>
+    <p-button
+      label="Disconnect"
+      icon="pi pi-sign-out"
+      severity="danger"
+      size="small"
+      (onClick)="disconnect()"
+    />
+  </div>
+
+  <div class="terminal-body">
+    <p class="placeholder-text">
+      <i class="pi pi-check-circle" style="color: var(--p-green-500)"></i>
+      SSH connection established. Terminal coming soon.
+    </p>
+  </div>
+</div>
