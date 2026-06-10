@@ -42,3 +42,4 @@ else
 fi
 
 echo "Postgres is available at localhost:${PG_PORT}"
+ #update
