@@ -7,7 +7,7 @@ if [ -f "$ENV_FILE" ]; then
   export $(grep -v '^#' "$ENV_FILE" | grep -v '^$' | xargs)
 fi
 
-CONTAINER_NAME="server-manager-pg"
+CONTAINER_NAME="server-manager"
 
 # Parse credentials from DATABASE_URL: postgresql://user:password@host:port/db
 PG_USER=$(echo "$DATABASE_URL" | sed -E 's|postgresql://([^:]+):.*|\1|')
@@ -37,6 +37,7 @@ else
     -e POSTGRES_PASSWORD="${PG_PASSWORD}" \
     -e POSTGRES_DB="${PG_DB}" \
     -p "${PG_PORT}":5432 \
+    -v server-manager-pgdata:/var/lib/postgresql/data \
     postgres:17
 fi
 
