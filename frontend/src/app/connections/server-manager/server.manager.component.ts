@@ -1,4 +1,5 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, inject, input, OnInit } from '@angular/core';
+import { ServerService } from './server.service';
 
 @Component({
   selector: 'app-server-manager',
@@ -8,5 +9,11 @@ import { Component, OnInit } from '@angular/core';
   styles: ``,
 })
 export class ServerManagerComponent implements OnInit {
-  ngOnInit(): void {}
+  private serverService = inject(ServerService);
+  id = input<string>();
+
+  ngOnInit(): void {
+    console.log('server init', this.id());
+    this.serverService.initSSH(this.id() as string);
+  }
 }

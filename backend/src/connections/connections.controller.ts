@@ -15,7 +15,7 @@ import { JwtPayload } from '../auth/jwt.strategy';
 import { ConnectionsService } from './connections.service';
 import { CreateConnectionDto } from './create-connection.dto';
 
-interface AuthRequest {
+export interface AuthRequest {
   user: JwtPayload;
 }
 

@@ -167,7 +167,8 @@ export class ConnectionsComponent implements OnInit {
     });
   }
 
-  navToServer(id: string) {
+  navToServer(connection: Connection) {
+    const { id } = connection;
     this.router.navigate(['/connections', id]);
   }
 }

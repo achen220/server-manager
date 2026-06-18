@@ -17,7 +17,7 @@
   } @else {
     <div class="connections-grid">
       @for (conn of connections(); track conn.id) {
-        <p-card styleClass="connection-card" (click)="navToServer(conn.id)">
+        <p-card styleClass="connection-card">
           <div class="card-body">
             <div class="card-info">
               <i class="pi pi-server card-icon"></i>
@@ -37,6 +37,13 @@
             />
           </div>
           <div class="card-actions">
+            <p-button
+              icon="pi pi-cloud"
+              [text]="true"
+              size="small"
+              (onClick)="navToServer(conn)"
+              title="Edit"
+            />
             <p-button
               icon="pi pi-pencil"
               [text]="true"
