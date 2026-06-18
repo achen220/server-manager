@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 
 @Component({
   selector: 'app-server-manager',
@@ -7,4 +7,6 @@ import { Component } from '@angular/core';
   template: `<p>hello here</p>`,
   styles: ``,
 })
-export class ServerManagerComponent {}
+export class ServerManagerComponent implements OnInit {
+  ngOnInit(): void {}
+}

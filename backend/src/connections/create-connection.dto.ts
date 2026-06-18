@@ -10,7 +10,7 @@ export class CreateConnectionDto {
   @IsInt()
   @Min(1)
   @Max(65535)
-  port: number = 22;
+  port = 22;
 
   @IsString()
   username!: string;
