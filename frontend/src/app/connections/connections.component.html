@@ -11,27 +11,13 @@
   </div>
 
   @if (loading()) {
-    <div class="empty-state">
-      <i class="pi pi-spin pi-spinner" style="font-size: 2rem"></i>
-    </div>
+    <app-loader></app-loader>
   } @else if (connections().length === 0) {
-    <div class="empty-state">
-      <i
-        class="pi pi-server"
-        style="font-size: 3rem; color: var(--p-text-muted-color)"
-      ></i>
-      <h3>No connections yet</h3>
-      <p>Add your first SSH server to get started</p>
-      <p-button
-        label="Add Connection"
-        icon="pi pi-plus"
-        (onClick)="openNew()"
-      />
-    </div>
+    <app-empty-connection (openNew)="openNew()"></app-empty-connection>
   } @else {
     <div class="connections-grid">
       @for (conn of connections(); track conn.id) {
-        <p-card styleClass="connection-card">
+        <p-card styleClass="connection-card" (click)="navToServer(conn.id)">
           <div class="card-body">
             <div class="card-info">
               <i class="pi pi-server card-icon"></i>
@@ -72,6 +58,8 @@
     </div>
   }
 </div>
+
+<router-outlet />
 
 <!-- Create / Edit Dialog -->
 <p-dialog

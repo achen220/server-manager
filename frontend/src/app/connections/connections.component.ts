@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Router, RouterOutlet } from '@angular/router';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
@@ -12,8 +13,10 @@ import { PasswordModule } from 'primeng/password';
 import { SelectButtonModule } from 'primeng/selectbutton';
 import { TagModule } from 'primeng/tag';
 import { ToastModule } from 'primeng/toast';
+import { LoadingComponent } from '../components/loading.component';
 import { Connection } from './connection.model';
 import { ConnectionsApiService } from './connections.api.service';
+import { EmptyConnectionsComponent } from './empty-connections/empty-connection.component';
 
 @Component({
   selector: 'app-connections',
@@ -31,6 +34,9 @@ import { ConnectionsApiService } from './connections.api.service';
     TagModule,
     ToastModule,
     ConfirmDialogModule,
+    LoadingComponent,
+    EmptyConnectionsComponent,
+    RouterOutlet,
   ],
   providers: [MessageService, ConfirmationService],
   templateUrl: './connections.component.html',
@@ -41,6 +47,7 @@ export class ConnectionsComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly msg = inject(MessageService);
   private readonly confirm = inject(ConfirmationService);
+  private readonly router = inject(Router);
 
   connections = signal<Connection[]>([]);
   loading = signal(false);
@@ -82,15 +89,15 @@ export class ConnectionsComponent implements OnInit {
     });
   }
 
-  openNew(): void {
-    this.editingId = null;
-    this.form.reset({ port: 22, authType: 'password' });
-    this.dialogVisible = true;
-  }
-
   openEdit(conn: Connection): void {
     this.editingId = conn.id;
     this.form.patchValue({ ...conn, password: '' });
+    this.dialogVisible = true;
+  }
+
+  openNew(): void {
+    this.editingId = null;
+    this.form.reset({ port: 22, authType: 'password' });
     this.dialogVisible = true;
   }
 
@@ -158,5 +165,9 @@ export class ConnectionsComponent implements OnInit {
         });
       },
     });
+  }
+
+  navToServer(id: string) {
+    this.router.navigate(['/connections', id]);
   }
 }
