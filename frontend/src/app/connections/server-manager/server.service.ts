@@ -10,6 +10,10 @@ export class ServerService {
   initSSH(id: string) {
     // const { host, username, password, port } = connectionInfo;
     // TODO: make subscription in component not service
-    this.http.post(`${this.base}/ssh-connection`, { id }).subscribe();
+    return this.http.post(`${this.base}/ssh-connection`, { id });
+  }
+
+  activeSSHUsers() {
+    return this.http.get(`${this.base}/ssh-users`);
   }
 }

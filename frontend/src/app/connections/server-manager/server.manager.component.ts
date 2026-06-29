@@ -1,6 +1,6 @@
 import { Component, inject, input, OnInit } from '@angular/core';
+import { forkJoin, switchMap } from 'rxjs';
 import { ServerService } from './server.service';
-
 @Component({
   selector: 'app-server-manager',
   standalone: true,
@@ -13,7 +13,14 @@ export class ServerManagerComponent implements OnInit {
   id = input<string>();
 
   ngOnInit(): void {
-    console.log('server init', this.id());
-    this.serverService.initSSH(this.id() as string);
+    const serverManager$ = this.serverService.initSSH(this.id() as string).pipe(
+      switchMap((x) =>
+        forkJoin({
+          ssUsers: this.serverService.activeSSHUsers(),
+        }),
+      ),
+    );
+
+    serverManager$.subscribe((c) => console.log({ c }));
   }
 }
