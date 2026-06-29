@@ -1,6 +1,8 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
+import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { ActiveSSHInfo } from './server.manager.component';
 
 @Injectable({ providedIn: 'root' })
 export class ServerService {
@@ -13,7 +15,7 @@ export class ServerService {
     return this.http.post(`${this.base}/ssh-connection`, { id });
   }
 
-  activeSSHUsers() {
-    return this.http.get(`${this.base}/ssh-users`);
+  activeSSHUsers(): Observable<ActiveSSHInfo[]> {
+    return this.http.get<ActiveSSHInfo[]>(`${this.base}/ssh-users`);
   }
 }
