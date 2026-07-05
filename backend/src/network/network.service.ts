@@ -22,6 +22,7 @@ export interface PortInfo {
 
 export interface FirewallStatus {
   active: boolean;
+  sudoRequired: boolean;
   rules: FirewallRule[];
 }
 
@@ -113,15 +114,21 @@ export class NetworkService {
   }
 
   async getFirewallRules(userId: string): Promise<FirewallStatus> {
+    // -n = non-interactive (fail immediately rather than prompting for password)
     const output = await this.serverService.runCommand(
       userId,
-      'ufw status numbered 2>/dev/null || echo "UFW_UNAVAILABLE"',
+      'sudo -n ufw status numbered 2>&1 || echo "UFW_UNAVAILABLE"',
     );
     if (
       output.includes('UFW_UNAVAILABLE') ||
-      output.toLowerCase().includes('inactive')
+      output.includes('sudo: a password is required') ||
+      output.includes('sudo:') && output.includes('password')
     ) {
-      return { active: false, rules: [] };
+      return { active: false, rules: [], sudoRequired: true };
+    }
+    const isActive = /Status:\s*active/i.test(output);
+    if (!isActive) {
+      return { active: false, rules: [], sudoRequired: false };
     }
     const rules: FirewallRule[] = output
       .split('\n')
@@ -138,7 +145,7 @@ export class NetworkService {
         } satisfies FirewallRule;
       })
       .filter((r): r is FirewallRule => r !== null);
-    return { active: true, rules };
+    return { active: true, rules, sudoRequired: false };
   }
 
   async addFirewallRule(

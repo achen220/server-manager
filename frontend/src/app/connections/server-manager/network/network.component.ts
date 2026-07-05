@@ -54,6 +54,7 @@ export interface PortInfo {
 
 export interface FirewallStatus {
   active: boolean;
+  sudoRequired: boolean;
   rules: FirewallRule[];
 }
 
@@ -179,8 +180,16 @@ export interface DnsConfig {
           @if (tab() === 'firewall') {
             <div class="fw-toolbar">
               @if (!firewall()?.active) {
-                <span class="fw-inactive"><i class="pi pi-exclamation-circle"></i> UFW is inactive or unavailable on this server.</span>
-                <p-button label="Enable UFW" icon="pi pi-shield" severity="warn" size="small" (onClick)="enableUfwDialogVisible.set(true)" />
+                @if (firewall()?.sudoRequired) {
+                  <span class="fw-inactive">
+                    <i class="pi pi-lock"></i>
+                    UFW is active but requires passwordless sudo. Run on the server:
+                    <code class="inline-code">echo "$(whoami) ALL=(ALL) NOPASSWD: /usr/sbin/ufw" | sudo tee /etc/sudoers.d/ufw-nopasswd</code>
+                  </span>
+                } @else {
+                  <span class="fw-inactive"><i class="pi pi-exclamation-circle"></i> UFW is inactive or unavailable on this server.</span>
+                  <p-button label="Enable UFW" icon="pi pi-shield" severity="warn" size="small" (onClick)="enableUfwDialogVisible.set(true)" />
+                }
               } @else {
                 <span class="fw-active"><i class="pi pi-shield"></i> UFW active — {{ firewall()!.rules.length }} rules</span>
               }
@@ -371,8 +380,14 @@ export interface DnsConfig {
       background: var(--p-surface-card); border-bottom: 1px solid var(--p-surface-border);
       flex-wrap: wrap;
     }
-    .fw-inactive { color: var(--p-yellow-400); font-size: 0.875rem; display: flex; align-items: center; gap: 0.375rem; }
+    .fw-inactive { color: var(--p-yellow-400); font-size: 0.875rem; display: flex; align-items: center; gap: 0.375rem; flex-wrap: wrap; }
     .fw-active { color: var(--p-green-500); font-size: 0.875rem; display: flex; align-items: center; gap: 0.375rem; }
+    .inline-code {
+      font-family: monospace; font-size: 0.75rem;
+      background: var(--p-surface-hover); border: 1px solid var(--p-surface-border);
+      border-radius: 0.25rem; padding: 0.1rem 0.4rem; color: var(--p-text-color);
+      user-select: all; cursor: text;
+    }
     .toolbar-sep { width: 1px; height: 1.5rem; background: var(--p-surface-border); }
     .selected-label { font-size: 0.8125rem; font-weight: 600; color: var(--p-primary-color); }
 
