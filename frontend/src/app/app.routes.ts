@@ -41,6 +41,15 @@ export const appRoutes: Route[] = [
     canActivate: [authGuard],
   },
 
+  {
+    path: 'connections/:id/network',
+    loadComponent: () =>
+      import('./connections/server-manager/network/network.component').then(
+        (m) => m.NetworkComponent,
+      ),
+    canActivate: [authGuard],
+  },
+
   { path: '', redirectTo: 'login', pathMatch: 'full' },
   { path: '**', redirectTo: 'login' },
 ];

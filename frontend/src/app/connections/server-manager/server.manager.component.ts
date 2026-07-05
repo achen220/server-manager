@@ -99,6 +99,13 @@ export interface GroupInfo {
               (onClick)="openMonitor()"
             />
             <p-button
+              label="Network"
+              icon="pi pi-wifi"
+              severity="secondary"
+              size="small"
+              (onClick)="openNetwork()"
+            />
+            <p-button
               label="Add User"
               icon="pi pi-user-plus"
               size="small"
@@ -624,6 +631,10 @@ export class ServerManagerComponent implements OnInit {
 
   openMonitor(): void {
     this.router.navigate(['/connections', this.id(), 'monitor']);
+  }
+
+  openNetwork(): void {
+    this.router.navigate(['/connections', this.id(), 'network']);
   }
 
   // ── Add User ──────────────────────────────────────────────
