@@ -10,11 +10,13 @@ import {
   signal,
 } from '@angular/core';
 import { Router } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
 import { ButtonModule } from 'primeng/button';
 import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import { io, Socket } from 'socket.io-client';
 import { SupabaseService } from '../core/supabase.service';
+import { ServerService } from '../connections/server-manager/server.service';
 import { environment } from '../../environments/environment';
 
 @Component({
@@ -30,6 +32,7 @@ export class TerminalComponent implements AfterViewInit, OnDestroy {
 
   private readonly router = inject(Router);
   private readonly supabase = inject(SupabaseService);
+  private readonly serverService = inject(ServerService);
 
   id = input<string>('');
   name = input<string>('Server');
@@ -45,6 +48,15 @@ export class TerminalComponent implements AfterViewInit, OnDestroy {
     const session = await this.supabase.getSession();
     if (!session) {
       this.router.navigate(['/login']);
+      return;
+    }
+
+    // Ensure SSH connection is established before opening the WebSocket shell.
+    // This handles direct navigation to /connections/:id/terminal (e.g. page refresh).
+    try {
+      await firstValueFrom(this.serverService.initSSH(this.id()));
+    } catch {
+      this.status.set('error');
       return;
     }
 
