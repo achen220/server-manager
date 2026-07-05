@@ -92,6 +92,13 @@ export interface GroupInfo {
               (onClick)="openTerminal()"
             />
             <p-button
+              label="Monitor"
+              icon="pi pi-chart-bar"
+              severity="secondary"
+              size="small"
+              (onClick)="openMonitor()"
+            />
+            <p-button
               label="Add User"
               icon="pi pi-user-plus"
               size="small"
@@ -613,6 +620,10 @@ export class ServerManagerComponent implements OnInit {
 
   openTerminal(): void {
     this.router.navigate(['/connections', this.id(), 'terminal']);
+  }
+
+  openMonitor(): void {
+    this.router.navigate(['/connections', this.id(), 'monitor']);
   }
 
   // ── Add User ──────────────────────────────────────────────

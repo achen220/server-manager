@@ -32,6 +32,15 @@ export const appRoutes: Route[] = [
     canActivate: [authGuard],
   },
 
+  {
+    path: 'connections/:id/monitor',
+    loadComponent: () =>
+      import('./connections/server-manager/monitor/monitor.component').then(
+        (m) => m.MonitorComponent,
+      ),
+    canActivate: [authGuard],
+  },
+
   { path: '', redirectTo: 'login', pathMatch: 'full' },
   { path: '**', redirectTo: 'login' },
 ];

@@ -67,6 +67,15 @@ export class ServerService {
     });
   }
 
+  /** Exposed for use by other modules (e.g. MonitoringService). */
+  runCommand(
+    userId: string,
+    command: string,
+    stdinData?: string,
+  ): Promise<string> {
+    return this.executeCommand(userId, command, stdinData);
+  }
+
   remoteConnectionSSH(
     userId: string,
     params: sshConnectionParams,

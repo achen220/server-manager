@@ -30,11 +30,11 @@
 
 ## Phase 3 — Server Monitoring Dashboard
 
-- [ ] **System overview** — `uname -a`, `uptime`, `lsb_release -a`, hostname; stats card row
-- [ ] **Resource usage** — CPU, RAM, disk; AG-Grid + progress bars; polled on interval
-- [ ] **Running processes** — `ps aux --sort=-%cpu`; searchable AG-Grid with kill action
-- [ ] **Service management** — `systemctl list-units --type=service`; start/stop/restart per row
-- [ ] **System logs** — `journalctl -n 200 --no-pager`; virtualized log viewer with filter/search
+- [x] **System overview** — `uname -a`, `uptime`, `lsb_release -a`, hostname; stats card row
+- [x] **Resource usage** — CPU, RAM, disk; progress bars; polled every 5s
+- [x] **Running processes** — `ps aux --sort=-%cpu`; searchable AG-Grid with kill action
+- [x] **Service management** — `systemctl list-units --type=service`; start/stop/restart per row
+- [x] **System logs** — `journalctl -n 200 --no-pager`; scrollable log viewer with filter/search
 
 ---
 
