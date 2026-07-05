@@ -11,10 +11,10 @@ import { InputNumberModule } from 'primeng/inputnumber';
 import { InputTextModule } from 'primeng/inputtext';
 import { PasswordModule } from 'primeng/password';
 import { SelectButtonModule } from 'primeng/selectbutton';
+import { SkeletonModule } from 'primeng/skeleton';
 import { TagModule } from 'primeng/tag';
 import { ToastModule } from 'primeng/toast';
 import { TextareaModule } from 'primeng/textarea';
-import { LoadingComponent } from '../components/loading.component';
 import { Connection } from './connection.model';
 import { ConnectionsApiService } from './connections.api.service';
 import { EmptyConnectionsComponent } from './empty-connections/empty-connection.component';
@@ -36,7 +36,7 @@ import { EmptyConnectionsComponent } from './empty-connections/empty-connection.
     TagModule,
     ToastModule,
     ConfirmDialogModule,
-    LoadingComponent,
+    SkeletonModule,
     EmptyConnectionsComponent,
     RouterOutlet,
   ],
@@ -55,6 +55,7 @@ export class ConnectionsComponent implements OnInit {
   loading = signal(false);
   dialogVisible = false;
   editingId: string | null = null;
+  readonly skeletonItems = [1, 2, 3];
 
   readonly authOptions = [
     { label: 'Password', value: 'password' },

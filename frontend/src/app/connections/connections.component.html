@@ -11,7 +11,28 @@
   </div>
 
   @if (loading()) {
-    <app-loader></app-loader>
+    <div class="connections-grid">
+      @for (_ of skeletonItems; track $index) {
+        <p-card styleClass="connection-card skeleton-card">
+          <div class="card-body">
+            <div class="card-info">
+              <p-skeleton shape="circle" size="2.75rem" />
+              <div class="skeleton-text-group">
+                <p-skeleton width="9rem" height="1rem" styleClass="mb-2" />
+                <p-skeleton width="13rem" height="0.8rem" styleClass="mb-1" />
+                <p-skeleton width="6rem" height="0.75rem" />
+              </div>
+            </div>
+            <p-skeleton width="5rem" height="1.5rem" borderRadius="1rem" />
+          </div>
+          <div class="card-actions">
+            <p-skeleton shape="circle" size="1.75rem" />
+            <p-skeleton shape="circle" size="1.75rem" />
+            <p-skeleton shape="circle" size="1.75rem" />
+          </div>
+        </p-card>
+      }
+    </div>
   } @else if (connections().length === 0) {
     <app-empty-connection (openNew)="openNew()"></app-empty-connection>
   } @else {
