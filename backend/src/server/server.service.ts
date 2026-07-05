@@ -84,66 +84,87 @@ export class ServerService {
   }
 
   async sshUsers() {
-    const output = await this.executeCommand('who');
-    console.log({ output });
-    return output
+    const [passwdOutput, whoOutput, lastOutput, sudoOutput] = await Promise.all(
+      [
+        this.executeCommand(
+          `awk -F: '$3 >= 1000 && $3 != 65534 {print $1":"$3":"$4":"$6":"$7}' /etc/passwd`,
+        ),
+        this.executeCommand('who'),
+        this.executeCommand('last -n 50 --time-format iso'),
+        this.executeCommand('getent group sudo wheel admin'), // sudo group members
+      ],
+    );
+
+    // Parse sudo/wheel/admin group members
+    const sudoUsers = new Set(
+      sudoOutput
+        .split('\n')
+        .filter((line) => line.trim())
+        .flatMap((line) => {
+          const members = line.split(':')[3]; // group format: name:pass:gid:members
+          return members ? members.split(',') : [];
+        }),
+    );
+
+    const loggedInUsers = new Set(
+      whoOutput
+        .split('\n')
+        .filter((line) => line.trim())
+        .map((line) => line.trim().split(/\s+/)[0]),
+    );
+
+    const lastLogins = lastOutput
+      .split('\n')
+      .filter(
+        (line) =>
+          line.trim() && !line.startsWith('reboot') && !line.startsWith('wtmp'),
+      )
+      .reduce(
+        (acc, line) => {
+          const parts = line.trim().split(/\s+/);
+          const username = parts[0];
+          if (!acc[username]) acc[username] = parts[3];
+          return acc;
+        },
+        {} as Record<string, string>,
+      );
+
+    return passwdOutput
       .split('\n')
       .filter((line) => line.trim())
       .map((line) => {
-        const parts = line.trim().split(/\s+/);
+        const [username, uid, gid, home, shell] = line.split(':');
         return {
-          username: parts[0],
-          type: parts[1],
-          terminal: parts[2] || null,
-          loginTime: `${parts[3]} ${parts[4]}`,
-          ip: parts[5]?.replace(/[()]/g, '') || null,
+          username,
+          uid: Number(uid),
+          gid: Number(gid),
+          home,
+          shell,
+          isActive: loggedInUsers.has(username),
+          lastLogin: lastLogins[username] ?? null,
+          isAdmin: sudoUsers.has(username),
+          hasValidShell: ![
+            '/sbin/nologin',
+            '/bin/false',
+            '/usr/sbin/nologin',
+          ].includes(shell),
         };
-      });
+      })
+      .filter((u) => u.hasValidShell);
   }
 
-  // async sambaOnlineUser() {
-  //   const output = await this.executeCommand('sudo smbstatus -p');
+  async addSshUser(username: string, password: string, isAdmin: boolean) {
+    // Create user with home dir and bash shell
+    await this.executeCommand(`sudo useradd -m -s /bin/bash ${username}`);
 
-  //   console.log({ output });
-  //   // return this.parseOnlineUsers(output);
-  //   const result = this.parseOnlineUsers(output);
-  //   console.log({ result });
-  //   return result;
-  // }
+    // Set password (pipe via stdin)
+    await this.executeCommand(`echo "${username}:${password}" | sudo chpasswd`);
 
-  // private parseOnlineUsers(output: string): any[] {
-  //   const users = [];
-  //   const lines = output.split('\n');
+    // Add to sudo group if admin
+    if (isAdmin) {
+      await this.executeCommand(`sudo usermod -aG sudo ${username}`);
+    }
 
-  //   // Find the header separator line (dashes), then parse rows after it
-  //   let dataStarted = false;
-
-  //   for (const line of lines) {
-  //     if (!dataStarted) {
-  //       if (line.startsWith('----') || line.startsWith('PID')) {
-  //         dataStarted = true;
-  //         continue;
-  //       }
-  //       // Skip header dashes line itself
-  //       if (dataStarted && line.startsWith('----')) continue;
-  //     }
-
-  //     if (dataStarted && line.trim()) {
-  //       const parts = line.trim().split(/\s+/);
-  //       if (parts.length >= 4 && /^\d+$/.test(parts[0])) {
-  //         users.push({
-  //           pid: parts[0],
-  //           username: parts[1],
-  //           group: parts[2],
-  //           machine: parts[3],
-  //           protocolVersion: parts[4] || '',
-  //           encryptionKey: parts[5] || '',
-  //           connectionTime: parts.slice(6).join(' ') || undefined,
-  //         });
-  //       }
-  //     }
-  //   }
-
-  //   return users;
-  // }
+    return { success: true, username };
+  }
 }

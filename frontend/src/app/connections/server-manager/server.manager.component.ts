@@ -2,6 +2,8 @@ import { AsyncPipe } from '@angular/common';
 import { Component, inject, input, OnInit, signal } from '@angular/core';
 import { AgGridAngular } from 'ag-grid-angular';
 import { GridApi, GridReadyEvent, themeBalham } from 'ag-grid-community';
+import { ButtonModule } from 'primeng/button';
+import { DialogModule } from 'primeng/dialog';
 import { forkJoin, Observable, of, switchMap } from 'rxjs';
 import { ServerService } from './server.service';
 import { ServerGridService } from './services/server-grid.service';
@@ -21,20 +23,38 @@ export interface ActiveSSHInfo {
 @Component({
   selector: 'app-server-manager',
   standalone: true,
-  imports: [AgGridAngular, AsyncPipe],
+  imports: [AgGridAngular, AsyncPipe, ButtonModule, DialogModule],
 
   template: `
-    @if (serverManager$ | async; as managerData) {
-      <ag-grid-angular
-        [theme]="theme"
-        style="width: 750px; height:300px"
-        [columnDefs]="serverGridService.activeSshUserColDef"
-        [rowData]="managerData.sshUsers"
-        (gridReady)="onGridReady($event)"
-      ></ag-grid-angular>
+    <div id="ssh-grid-wrapper">
+      @if (serverManager$ | async; as managerData) {
+        <button pButton type="button" (click)="this.dialogVisible.set(true)">
+          Add User
+        </button>
+        <ag-grid-angular
+          [theme]="theme"
+          style="width: 100%; height:300px"
+          [columnDefs]="serverGridService.activeSshUserColDef"
+          [rowData]="managerData.sshUsers"
+          [gridOptions]="serverGridService.activeSshUserGridOptions"
+          (gridReady)="onGridReady($event)"
+        ></ag-grid-angular>
+      }
+    </div>
+    <p-dialog
+      [visible]="dialogVisible()"
+      (visibleChange)="dialogVisible.set($event)"
+      header="Add User"
+      [modal]="true"
+    >
+      <!-- dialog content -->
+    </p-dialog>
+  `,
+  styles: `
+    #ssh-grid-wrapper {
+      max-width: 50%;
     }
   `,
-  styles: ``,
 })
 export class ServerManagerComponent implements OnInit {
   private serverService = inject(ServerService);
@@ -45,10 +65,7 @@ export class ServerManagerComponent implements OnInit {
 
   id = input<string>();
 
-  // activeSshUsers = computed<ActiveSSHInfo[]>(() => {
-  //   const { sshUsers } = this.initServer();
-  //   return sshUsers ?? [];
-  // });
+  dialogVisible = signal<boolean>(false);
 
   theme = themeBalham;
 
@@ -71,12 +88,6 @@ export class ServerManagerComponent implements OnInit {
         }),
       ),
     );
-
-    // serverManager$.subscribe((val) => {
-    //   this.initServer.set(val.sshUsers);
-    //   this.gridApi?.setGridOption('rowData', this.activeSshUsers());
-    //   console.log({ val });
-    // });
   }
 
   onGridReady(params: GridReadyEvent) {

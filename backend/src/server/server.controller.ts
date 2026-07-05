@@ -9,6 +9,7 @@ import {
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { AuthRequest } from '../connections/connections.controller';
 import { ConnectionsService } from '../connections/connections.service';
+import { AddSshUserDto } from '../types/AddSshUser.dto';
 import { ServerService } from './server.service';
 
 export interface sshConnectionParams {
@@ -44,5 +45,14 @@ export class ServerController {
   @Get('ssh-users')
   async sshUsers() {
     return await this.serverService.sshUsers();
+  }
+
+  @Post('add-ssh-user')
+  async addSshUser(@Body() body: AddSshUserDto) {
+    return await this.serverService.addSshUser(
+      body.username,
+      body.password,
+      body.isAdmin,
+    );
   }
 }
