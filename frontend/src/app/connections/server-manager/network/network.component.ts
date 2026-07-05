@@ -92,11 +92,13 @@ export interface DnsConfig {
 
     <div class="network-page">
       <!-- Header -->
+      @if (!embedded()) {
       <div class="page-header">
         <p-button icon="pi pi-arrow-left" severity="secondary" [text]="true" size="small" (onClick)="goBack()" />
         <span class="page-title"><i class="pi pi-wifi"></i> Network</span>
         <p-button icon="pi pi-refresh" label="Refresh" severity="secondary" size="small" [loading]="loading()" (onClick)="loadAll()" />
       </div>
+      }
 
       @if (loadError()) {
         <div class="error-banner"><i class="pi pi-exclamation-triangle"></i> {{ loadError() }}</div>
@@ -379,6 +381,7 @@ export class NetworkComponent implements OnInit, OnDestroy {
   private readonly msg = inject(MessageService);
 
   id = input<string>();
+  embedded = input(false);
 
   // Data
   interfaces = signal<NetworkInterface[]>([]);

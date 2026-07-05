@@ -99,6 +99,7 @@ export interface ServiceInfo {
 
     <div class="monitor-page">
       <!-- ── Page header ── -->
+      @if (!embedded()) {
       <div class="page-header">
         <p-button
           icon="pi pi-arrow-left"
@@ -139,6 +140,7 @@ export interface ServiceInfo {
           />
         </div>
       </div>
+      }
 
       @if (loadError()) {
         <div class="error-banner">
@@ -614,6 +616,7 @@ export class MonitorComponent implements OnInit, OnDestroy {
   private readonly datePipe = inject(DatePipe);
 
   id = input<string>();
+  embedded = input(false);
 
   // Data signals
   overview = signal<SystemOverview | null>(null);

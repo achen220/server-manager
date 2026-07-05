@@ -1,7 +1,7 @@
-import { AsyncPipe } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
+  OnDestroy,
   OnInit,
   inject,
   input,
@@ -29,14 +29,12 @@ import { PasswordModule } from 'primeng/password';
 import { TextareaModule } from 'primeng/textarea';
 import { ToastModule } from 'primeng/toast';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
-import { Observable, forkJoin, map, of, switchMap } from 'rxjs';
+import { Subject, forkJoin, switchMap } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
+import { MonitorComponent } from './monitor/monitor.component';
+import { NetworkComponent } from './network/network.component';
 import { ServerService } from './server.service';
 import { ServerGridService } from './services/server-grid.service';
-
-export interface ServerManager {
-  sshUsers?: ActiveSSHInfo[];
-  groups?: GroupInfo[];
-}
 
 export interface ActiveSSHInfo {
   username: string;
@@ -63,10 +61,11 @@ export interface GroupInfo {
   providers: [MessageService],
   imports: [
     AgGridAngular,
-    AsyncPipe,
     ButtonModule,
     DialogModule,
     InputTextModule,
+    MonitorComponent,
+    NetworkComponent,
     PasswordModule,
     ReactiveFormsModule,
     TextareaModule,
@@ -75,36 +74,37 @@ export interface GroupInfo {
   ],
   template: `
     <p-toast />
-    <div id="ssh-grid-wrapper">
-      @if (serverManager$ | async; as data) {
+    <div class="server-page">
 
-        <!-- ── Users Section ── -->
-        <div class="section-header">
-          <h2 class="section-title">
+      <!-- ─── Tab bar + Terminal button ─── -->
+      <div class="server-topbar">
+        <div class="tab-bar">
+          <button class="tab-btn" [class.active]="tab() === 'users'" (click)="tab.set('users')">
             <i class="pi pi-users"></i> SSH Users
-          </h2>
-          <div class="toolbar">
-            <p-button
-              label="Open Terminal"
-              icon="pi pi-desktop"
-              severity="secondary"
-              size="small"
-              (onClick)="openTerminal()"
-            />
-            <p-button
-              label="Monitor"
-              icon="pi pi-chart-bar"
-              severity="secondary"
-              size="small"
-              (onClick)="openMonitor()"
-            />
-            <p-button
-              label="Network"
-              icon="pi pi-wifi"
-              severity="secondary"
-              size="small"
-              (onClick)="openNetwork()"
-            />
+          </button>
+          <button class="tab-btn" [class.active]="tab() === 'groups'" (click)="tab.set('groups')">
+            <i class="pi pi-sitemap"></i> System Groups
+          </button>
+          <button class="tab-btn" [class.active]="tab() === 'monitor'" (click)="tab.set('monitor')">
+            <i class="pi pi-chart-bar"></i> Monitor
+          </button>
+          <button class="tab-btn" [class.active]="tab() === 'network'" (click)="tab.set('network')">
+            <i class="pi pi-wifi"></i> Network
+          </button>
+        </div>
+        <p-button
+          label="Open Terminal"
+          icon="pi pi-desktop"
+          severity="secondary"
+          size="small"
+          (onClick)="openTerminal()"
+        />
+      </div>
+
+      <!-- ─── SSH Users tab ─── -->
+      @if (tab() === 'users') {
+        <div class="tab-content">
+          <div class="section-toolbar">
             <p-button
               label="Add User"
               icon="pi pi-user-plus"
@@ -140,24 +140,22 @@ export interface GroupInfo {
               />
             }
           </div>
+          <ag-grid-angular
+            [theme]="theme"
+            style="width: 100%; height: calc(100vh - 12rem)"
+            [columnDefs]="serverGridService.activeSshUserColDef"
+            [rowData]="sshUsers()"
+            [gridOptions]="serverGridService.activeSshUserGridOptions"
+            (gridReady)="onGridReady($event)"
+            (selectionChanged)="onUserSelectionChanged($event)"
+          />
         </div>
+      }
 
-        <ag-grid-angular
-          [theme]="theme"
-          style="width: 100%; height: 360px"
-          [columnDefs]="serverGridService.activeSshUserColDef"
-          [rowData]="data.sshUsers"
-          [gridOptions]="serverGridService.activeSshUserGridOptions"
-          (gridReady)="onGridReady($event)"
-          (selectionChanged)="onUserSelectionChanged($event)"
-        />
-
-        <!-- ── Groups Section ── -->
-        <div class="section-header" style="margin-top: 2rem">
-          <h2 class="section-title">
-            <i class="pi pi-sitemap"></i> System Groups
-          </h2>
-          <div class="toolbar">
+      <!-- ─── System Groups tab ─── -->
+      @if (tab() === 'groups') {
+        <div class="tab-content">
+          <div class="section-toolbar">
             <p-button
               label="Add Group"
               icon="pi pi-plus"
@@ -185,19 +183,28 @@ export interface GroupInfo {
               />
             }
           </div>
+          <ag-grid-angular
+            [theme]="theme"
+            style="width: 100%; height: calc(100vh - 12rem)"
+            [columnDefs]="serverGridService.groupsColDef"
+            [rowData]="groups()"
+            [gridOptions]="serverGridService.groupsGridOptions"
+            (gridReady)="onGroupsGridReady($event)"
+            (selectionChanged)="onGroupSelectionChanged($event)"
+          />
         </div>
-
-        <ag-grid-angular
-          [theme]="theme"
-          style="width: 100%; height: 260px"
-          [columnDefs]="serverGridService.groupsColDef"
-          [rowData]="data.groups"
-          [gridOptions]="serverGridService.groupsGridOptions"
-          (gridReady)="onGroupsGridReady($event)"
-          (selectionChanged)="onGroupSelectionChanged($event)"
-        />
-
       }
+
+      <!-- ─── Monitor tab ─── -->
+      @if (tab() === 'monitor') {
+        <app-monitor [id]="id()" [embedded]="true" />
+      }
+
+      <!-- ─── Network tab ─── -->
+      @if (tab() === 'network') {
+        <app-network [id]="id()" [embedded]="true" />
+      }
+
     </div>
 
     <!-- ── Add User Dialog ── -->
@@ -408,32 +415,46 @@ export interface GroupInfo {
     </p-dialog>
   `,
   styles: `
-    #ssh-grid-wrapper { padding: 1.5rem; }
+    .server-page { display: flex; flex-direction: column; height: calc(100vh - 3.5rem); }
 
-    .section-header {
+    /* ─── Tab bar ─── */
+    .server-topbar {
+      display: flex;
+      align-items: stretch;
+      justify-content: space-between;
+      background: var(--p-surface-ground);
+      border-bottom: 1px solid var(--p-surface-border);
+      padding-right: 1rem;
+    }
+    .tab-bar { display: flex; }
+    .tab-btn {
+      padding: 0.75rem 1.375rem;
+      border: none;
+      background: transparent;
+      color: var(--p-text-muted-color);
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
       display: flex;
       align-items: center;
-      gap: 1rem;
-      margin-bottom: 0.75rem;
-      flex-wrap: wrap;
+      gap: 0.375rem;
+      border-bottom: 2px solid transparent;
+      transition: background 0.15s, color 0.15s;
+      &:hover { background: var(--p-surface-hover); color: var(--p-text-color); }
+      &.active { color: var(--p-primary-color); border-bottom-color: var(--p-primary-color); background: var(--p-surface-card); }
     }
 
-    .section-title {
-      font-size: 1rem;
-      font-weight: 600;
-      margin: 0;
-      display: flex;
-      align-items: center;
-      gap: 0.4rem;
-      flex-shrink: 0;
-      color: var(--p-text-color);
-    }
+    /* ─── Tab content ─── */
+    .tab-content { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
 
-    .toolbar {
+    .section-toolbar {
       display: flex;
       align-items: center;
       gap: 0.5rem;
+      padding: 0.625rem 1rem;
       flex-wrap: wrap;
+      background: var(--p-surface-card);
+      border-bottom: 1px solid var(--p-surface-border);
     }
 
     .toolbar-sep {
@@ -452,6 +473,7 @@ export interface GroupInfo {
       gap: 0.25rem;
     }
 
+    /* ─── Dialogs ─── */
     .dialog-form { display: flex; flex-direction: column; gap: 1rem; padding-top: 0.5rem; }
     .field { display: flex; flex-direction: column; gap: 0.375rem; }
     .field-row { flex-direction: row; align-items: center; justify-content: space-between; }
@@ -527,17 +549,25 @@ export interface GroupInfo {
     }
   `,
 })
-export class ServerManagerComponent implements OnInit {
+export class ServerManagerComponent implements OnInit, OnDestroy {
   private readonly serverService = inject(ServerService);
   readonly serverGridService = inject(ServerGridService);
   private readonly router = inject(Router);
   private readonly msg = inject(MessageService);
   private readonly fb = inject(FormBuilder);
+  private readonly destroy$ = new Subject<void>();
 
   private gridApi!: GridApi;
   private groupsGridApi!: GridApi;
 
   id = input<string>();
+
+  // Active tab
+  tab = signal<'users' | 'groups' | 'monitor' | 'network'>('users');
+
+  // Data signals
+  sshUsers = signal<ActiveSSHInfo[]>([]);
+  groups = signal<GroupInfo[]>([]);
 
   // Dialog visibility
   addUserDialogVisible = signal(false);
@@ -571,7 +601,6 @@ export class ServerManagerComponent implements OnInit {
   newMemberControl = new FormControl('');
 
   theme = themeBalham;
-  serverManager$: Observable<ServerManager> = of({});
 
   addUserForm = this.fb.group({
     username: [
@@ -590,21 +619,42 @@ export class ServerManagerComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    this.serverManager$ = this.serverService.initSSH(this.id()!).pipe(
-      switchMap(() =>
-        forkJoin({
-          sshUsers: this.serverService.activeSSHUsers(),
-          groups: this.serverService.getGroups(),
-        }),
-      ),
-    );
+    this.serverService
+      .initSSH(this.id()!)
+      .pipe(
+        switchMap(() =>
+          forkJoin({
+            sshUsers: this.serverService.activeSSHUsers(),
+            groups: this.serverService.getGroups(),
+          }),
+        ),
+        takeUntil(this.destroy$),
+      )
+      .subscribe({
+        next: (data) => {
+          this.sshUsers.set(data.sshUsers);
+          this.groups.set(data.groups);
+        },
+      });
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   private refreshData(): void {
-    this.serverManager$ = forkJoin({
+    forkJoin({
       sshUsers: this.serverService.activeSSHUsers(),
       groups: this.serverService.getGroups(),
-    });
+    })
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (data) => {
+          this.sshUsers.set(data.sshUsers);
+          this.groups.set(data.groups);
+        },
+      });
   }
 
   onGridReady(params: GridReadyEvent): void {
@@ -627,14 +677,6 @@ export class ServerManagerComponent implements OnInit {
 
   openTerminal(): void {
     this.router.navigate(['/connections', this.id(), 'terminal']);
-  }
-
-  openMonitor(): void {
-    this.router.navigate(['/connections', this.id(), 'monitor']);
-  }
-
-  openNetwork(): void {
-    this.router.navigate(['/connections', this.id(), 'network']);
   }
 
   // ── Add User ──────────────────────────────────────────────
