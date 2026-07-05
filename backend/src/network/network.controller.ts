@@ -56,4 +56,9 @@ export class NetworkController {
   getDnsConfig(@Request() req: AuthRequest) {
     return this.networkService.getDnsConfig(req.user.sub);
   }
+
+  @Post('firewall/enable')
+  enableUfw(@Request() req: AuthRequest) {
+    return this.networkService.enableUfw(req.user.sub);
+  }
 }

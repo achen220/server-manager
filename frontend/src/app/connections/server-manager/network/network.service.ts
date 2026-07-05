@@ -45,4 +45,8 @@ export class NetworkService {
   getDnsConfig(): Observable<DnsConfig> {
     return this.http.get<DnsConfig>(`${this.base}/dns`);
   }
+
+  enableUfw(): Observable<void> {
+    return this.http.post<void>(`${this.base}/firewall/enable`, {});
+  }
 }

@@ -180,6 +180,7 @@ export interface DnsConfig {
             <div class="fw-toolbar">
               @if (!firewall()?.active) {
                 <span class="fw-inactive"><i class="pi pi-exclamation-circle"></i> UFW is inactive or unavailable on this server.</span>
+                <p-button label="Enable UFW" icon="pi pi-shield" severity="warn" size="small" (onClick)="enableUfwDialogVisible.set(true)" />
               } @else {
                 <span class="fw-active"><i class="pi pi-shield"></i> UFW active — {{ firewall()!.rules.length }} rules</span>
               }
@@ -267,6 +268,29 @@ export interface DnsConfig {
             (onClick)="submitAddRule()"
           />
         </div>
+      </div>
+    </p-dialog>
+
+    <!-- Enable UFW Confirm Dialog -->
+    <p-dialog
+      [visible]="enableUfwDialogVisible()"
+      (visibleChange)="enableUfwDialogVisible.set($event)"
+      header="Enable UFW Firewall"
+      [modal]="true"
+      [style]="{ width: '28rem' }"
+      [draggable]="false"
+    >
+      <div class="enable-ufw-body">
+        <i class="pi pi-shield enable-ufw-icon"></i>
+        <p>This will activate UFW on the server.</p>
+        <div class="enable-ufw-note">
+          <i class="pi pi-info-circle"></i>
+          Port <strong>22/tcp</strong> (SSH) will be automatically allowed before enabling to prevent lockout.
+        </div>
+      </div>
+      <div class="dialog-footer">
+        <p-button label="Cancel" severity="secondary" (onClick)="enableUfwDialogVisible.set(false)" />
+        <p-button label="Enable UFW" icon="pi pi-shield" severity="warn" [loading]="enableUfwLoading()" (onClick)="confirmEnableUfw()" />
       </div>
     </p-dialog>
   `,
@@ -371,6 +395,17 @@ export interface DnsConfig {
     .hint { font-size: 0.75rem; font-weight: 400; color: var(--p-text-muted-color); }
     .dialog-footer { display: flex; justify-content: flex-end; gap: 0.5rem; padding-top: 0.5rem; }
 
+    .enable-ufw-body { display: flex; flex-direction: column; align-items: center; gap: 0.75rem; padding: 0.5rem 0 1rem; text-align: center; }
+    .enable-ufw-icon { font-size: 2rem; color: var(--p-yellow-400); }
+    .enable-ufw-body p { margin: 0; font-size: 0.9375rem; }
+    .enable-ufw-note {
+      display: flex; align-items: flex-start; gap: 0.5rem; font-size: 0.8125rem;
+      background: color-mix(in srgb, var(--p-yellow-400) 10%, transparent);
+      border: 1px solid color-mix(in srgb, var(--p-yellow-400) 30%, transparent);
+      border-radius: 0.375rem; padding: 0.625rem 0.875rem; text-align: left;
+      color: var(--p-text-color);
+    }
+
     .empty-text { color: var(--p-text-muted-color); font-size: 0.875rem; padding: 1rem; margin: 0; }
   `,
 })
@@ -398,8 +433,10 @@ export class NetworkComponent implements OnInit, OnDestroy {
   // Firewall actions
   selectedRule = signal<FirewallRule | null>(null);
   addRuleDialogVisible = signal(false);
+  enableUfwDialogVisible = signal(false);
   addRuleLoading = signal(false);
   deleteRuleLoading = signal(false);
+  enableUfwLoading = signal(false);
   newRule = '';
   newRuleAction: 'allow' | 'deny' = 'allow';
   readonly actionOptions = [
@@ -559,6 +596,22 @@ export class NetworkComponent implements OnInit, OnDestroy {
   private reloadFirewall(): void {
     this.networkService.getFirewallRules().subscribe({
       next: (fw) => this.firewall.set(fw),
+    });
+  }
+
+  confirmEnableUfw(): void {
+    this.enableUfwLoading.set(true);
+    this.networkService.enableUfw().subscribe({
+      next: () => {
+        this.enableUfwLoading.set(false);
+        this.enableUfwDialogVisible.set(false);
+        this.msg.add({ severity: 'success', summary: 'UFW enabled', detail: 'Port 22/tcp has been allowed and UFW is now active' });
+        this.reloadFirewall();
+      },
+      error: (err: { error?: { message?: string } }) => {
+        this.enableUfwLoading.set(false);
+        this.msg.add({ severity: 'error', summary: 'Error', detail: err.error?.message ?? 'Failed to enable UFW' });
+      },
     });
   }
 }

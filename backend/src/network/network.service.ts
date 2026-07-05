@@ -185,4 +185,12 @@ export class NetworkService {
       raw: output,
     };
   }
+
+  async enableUfw(userId: string): Promise<void> {
+    // Allow SSH first to prevent lockout, then force-enable UFW
+    await this.serverService.runCommand(
+      userId,
+      'sudo ufw allow 22/tcp && sudo ufw --force enable',
+    );
+  }
 }
