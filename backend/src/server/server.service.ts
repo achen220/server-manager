@@ -80,10 +80,11 @@ export class ServerService {
     userId: string,
     params: sshConnectionParams,
   ): Promise<void> {
-    const existing = this.clients.get(userId);
-    if (existing) {
-      existing.end();
-      this.clients.delete(userId);
+    // If a live client already exists, reuse it — do not tear it down.
+    // The 'close' event handler removes the client when it dies, so presence
+    // in the map means the connection is still alive.
+    if (this.clients.has(userId)) {
+      return Promise.resolve();
     }
 
     return new Promise((resolve, reject) => {
@@ -114,17 +115,19 @@ export class ServerService {
   }
 
   async sshUsers(userId: string) {
-    const [passwdOutput, whoOutput, lastOutput, sudoOutput] = await Promise.all(
+    // Run all 4 commands in a single exec to avoid opening parallel channels
+    const combined = await this.executeCommand(
+      userId,
       [
-        this.executeCommand(
-          userId,
-          `awk -F: '$3 >= 1000 && $3 != 65534 {print $1":"$3":"$4":"$6":"$7}' /etc/passwd`,
-        ),
-        this.executeCommand(userId, 'who'),
-        this.executeCommand(userId, 'last -n 50 --time-format iso'),
-        this.executeCommand(userId, 'getent group sudo wheel admin'),
-      ],
+        `awk -F: '$3 >= 1000 && $3 != 65534 {print $1":"$3":"$4":"$6":"$7}' /etc/passwd`,
+        'who',
+        'last -n 50 --time-format iso',
+        'getent group sudo wheel admin',
+      ].join(' ; echo "__SEP__" ; '),
     );
+
+    const [passwdOutput = '', whoOutput = '', lastOutput = '', sudoOutput = ''] =
+      combined.split(/\n?__SEP__\n?/);
 
     // Parse sudo/wheel/admin group members
     const sudoUsers = new Set(
