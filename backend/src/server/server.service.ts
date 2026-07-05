@@ -201,4 +201,155 @@ export class ServerService {
 
     return { success: true, username };
   }
+
+  async deleteUser(userId: string, username: string): Promise<void> {
+    if (!/^[a-z_][a-z0-9_-]{0,31}$/.test(username)) {
+      throw new BadRequestException('Invalid username format');
+    }
+    await this.executeCommand(userId, `sudo userdel -r -- ${username}`);
+  }
+
+  async toggleAdmin(
+    userId: string,
+    username: string,
+    grant: boolean,
+  ): Promise<void> {
+    if (!/^[a-z_][a-z0-9_-]{0,31}$/.test(username)) {
+      throw new BadRequestException('Invalid username format');
+    }
+    if (grant) {
+      await this.executeCommand(
+        userId,
+        `sudo usermod -aG sudo -- ${username}`,
+      );
+    } else {
+      await this.executeCommand(userId, `sudo gpasswd -d ${username} sudo`);
+    }
+  }
+
+  async getAuthorizedKeys(
+    userId: string,
+    targetUsername: string,
+  ): Promise<string[]> {
+    if (!/^[a-z_][a-z0-9_-]{0,31}$/.test(targetUsername)) {
+      throw new BadRequestException('Invalid username format');
+    }
+    const keysFile = `/home/${targetUsername}/.ssh/authorized_keys`;
+    try {
+      const output = await this.executeCommand(
+        userId,
+        `sudo test -f ${keysFile} && sudo cat ${keysFile} || echo ""`,
+      );
+      return output
+        .split('\n')
+        .filter((line) => line.trim() && !line.startsWith('#'));
+    } catch {
+      return [];
+    }
+  }
+
+  async addAuthorizedKey(
+    userId: string,
+    targetUsername: string,
+    publicKey: string,
+  ): Promise<void> {
+    if (!/^[a-z_][a-z0-9_-]{0,31}$/.test(targetUsername)) {
+      throw new BadRequestException('Invalid username format');
+    }
+    const trimmed = publicKey.trim();
+    if (
+      !/^(ssh-rsa|ssh-ed25519|ecdsa-sha2-nistp\d+|sk-ssh-ed25519@openssh\.com)\s/.test(
+        trimmed,
+      )
+    ) {
+      throw new BadRequestException('Invalid SSH public key format');
+    }
+    const targetDir = `/home/${targetUsername}/.ssh`;
+    const keysFile = `${targetDir}/authorized_keys`;
+    await this.executeCommand(
+      userId,
+      `sudo mkdir -p ${targetDir} && sudo chmod 700 ${targetDir} && sudo tee -a ${keysFile} > /dev/null && sudo chmod 600 ${keysFile} && sudo chown -R ${targetUsername}:${targetUsername} ${targetDir}`,
+      trimmed + '\n',
+    );
+  }
+
+  async removeAuthorizedKey(
+    userId: string,
+    targetUsername: string,
+    keyIndex: number,
+  ): Promise<void> {
+    if (!/^[a-z_][a-z0-9_-]{0,31}$/.test(targetUsername)) {
+      throw new BadRequestException('Invalid username format');
+    }
+    if (!Number.isInteger(keyIndex) || keyIndex < 0) {
+      throw new BadRequestException('Invalid key index');
+    }
+    const keysFile = `/home/${targetUsername}/.ssh/authorized_keys`;
+    // sed line numbers are 1-indexed
+    await this.executeCommand(
+      userId,
+      `sudo sed -i '${keyIndex + 1}d' ${keysFile}`,
+    );
+  }
+
+  async getGroups(
+    userId: string,
+  ): Promise<Array<{ name: string; gid: number; members: string[] }>> {
+    const output = await this.executeCommand(
+      userId,
+      `getent group | awk -F: '$3 >= 1000 || $1 ~ /^(sudo|wheel|admin|docker|www-data)$/ {print $1":"$3":"$4}'`,
+    );
+    return output
+      .split('\n')
+      .filter((line) => line.trim())
+      .map((line) => {
+        const [name, gidStr, membersStr] = line.split(':');
+        return {
+          name,
+          gid: Number(gidStr),
+          members: membersStr
+            ? membersStr.split(',').filter((m) => m.trim())
+            : [],
+        };
+      });
+  }
+
+  async createGroup(userId: string, groupName: string): Promise<void> {
+    if (!/^[a-z_][a-z0-9_-]{0,31}$/.test(groupName)) {
+      throw new BadRequestException('Invalid group name format');
+    }
+    await this.executeCommand(userId, `sudo groupadd -- ${groupName}`);
+  }
+
+  async deleteGroup(userId: string, groupName: string): Promise<void> {
+    if (!/^[a-z_][a-z0-9_-]{0,31}$/.test(groupName)) {
+      throw new BadRequestException('Invalid group name format');
+    }
+    await this.executeCommand(userId, `sudo groupdel -- ${groupName}`);
+  }
+
+  async assignUserToGroup(
+    userId: string,
+    username: string,
+    groupName: string,
+    add: boolean,
+  ): Promise<void> {
+    if (!/^[a-z_][a-z0-9_-]{0,31}$/.test(username)) {
+      throw new BadRequestException('Invalid username format');
+    }
+    if (!/^[a-z_][a-z0-9_-]{0,31}$/.test(groupName)) {
+      throw new BadRequestException('Invalid group name format');
+    }
+    if (add) {
+      await this.executeCommand(
+        userId,
+        `sudo usermod -aG ${groupName} -- ${username}`,
+      );
+    } else {
+      await this.executeCommand(
+        userId,
+        `sudo gpasswd -d ${username} ${groupName}`,
+      );
+    }
+  }
 }

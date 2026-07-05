@@ -20,11 +20,11 @@
 
 ## Phase 2 — User & Permission Management
 
-- [ ] **Delete SSH user** — `userdel` + confirmation dialog + AG-Grid row action
-- [ ] **Change user password** — `chpasswd` via stdin; dialog from grid row actions
-- [ ] **Manage sudo/admin access** — `usermod -aG sudo` / `gpasswd -d`; toggle in grid
-- [ ] **Per-user SSH authorized_keys management** — list, add, remove SSH public keys in `~/.ssh/authorized_keys`
-- [ ] **Group management** — list system groups, create/delete, assign users
+- [x] **Delete SSH user** — `userdel` + confirmation dialog + AG-Grid row action
+- [ ] ~~**Change user password**~~ — skipped by user request
+- [x] **Manage sudo/admin access** — `usermod -aG sudo` / `gpasswd -d`; toggle in grid
+- [x] **Per-user SSH authorized_keys management** — list, add, remove SSH public keys in `~/.ssh/authorized_keys`
+- [x] **Group management** — list system groups, create/delete, assign users
 
 ---
 
