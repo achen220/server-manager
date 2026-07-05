@@ -51,31 +51,28 @@ export class MonitoringService {
   constructor(private readonly serverService: ServerService) {}
 
   async getSystemOverview(userId: string): Promise<SystemOverview> {
-    const [hostname, uptime, os, kernel, arch, loadAvg] = await Promise.all([
-      this.serverService.runCommand(userId, 'hostname'),
-      this.serverService.runCommand(
-        userId,
-        'uptime -p 2>/dev/null || uptime',
-      ),
-      this.serverService.runCommand(
-        userId,
+    // Single exec — 6 lines in order: hostname, uptime, os, kernel, arch, loadavg
+    const output = await this.serverService.runCommand(
+      userId,
+      [
+        'hostname',
+        "uptime -p 2>/dev/null || uptime",
         "grep '^PRETTY_NAME' /etc/os-release 2>/dev/null | cut -d= -f2 | tr -d '\"' || uname -s",
-      ),
-      this.serverService.runCommand(userId, 'uname -r'),
-      this.serverService.runCommand(userId, 'uname -m'),
-      this.serverService.runCommand(
-        userId,
+        'uname -r',
+        'uname -m',
         "awk '{print $1\",\"$2\",\"$3}' /proc/loadavg",
-      ),
-    ]);
-
-    const [load1, load5, load15] = loadAvg.trim().split(',');
+      ].join('; '),
+    );
+    const [hostname, uptime, os, kernel, arch, loadAvg] = output
+      .trim()
+      .split('\n');
+    const [load1, load5, load15] = (loadAvg ?? '').split(',');
     return {
-      hostname: hostname.trim(),
-      uptime: uptime.trim(),
-      os: os.trim(),
-      kernel: kernel.trim(),
-      arch: arch.trim(),
+      hostname: hostname?.trim() ?? '',
+      uptime: uptime?.trim() ?? '',
+      os: os?.trim() ?? '',
+      kernel: kernel?.trim() ?? '',
+      arch: arch?.trim() ?? '',
       loadAvg: {
         load1: load1 ?? '-',
         load5: load5 ?? '-',
@@ -85,18 +82,17 @@ export class MonitoringService {
   }
 
   async getResourceUsage(userId: string): Promise<ResourceUsage> {
-    const [freeOutput, dfOutput, cpuOutput] = await Promise.all([
-      this.serverService.runCommand(userId, 'free -b'),
-      this.serverService.runCommand(userId, 'df -B1 /'),
-      // Read /proc/stat once; gives CPU usage since boot (approximation)
-      this.serverService.runCommand(
-        userId,
-        "awk '/^cpu / {idle=$5; total=0; for(i=2;i<=NF;i++) total+=$i; printf \"%.1f\", (1-idle/total)*100}' /proc/stat",
-      ),
-    ]);
+    // Single exec — sections delimited by sentinel lines
+    const output = await this.serverService.runCommand(
+      userId,
+      "free -b && echo '===DF===' && df -B1 / && echo '===CPU===' && awk '/^cpu / {idle=$5; total=0; for(i=2;i<=NF;i++) total+=$i; printf \"%.1f\\n\", (1-idle/total)*100}' /proc/stat",
+    );
 
-    // Parse RAM (free -b output)
-    const memLine = freeOutput
+    const [freePart = '', rest = ''] = output.split('===DF===');
+    const [dfPart = '', cpuPart = ''] = rest.split('===CPU===');
+
+    // Parse RAM
+    const memLine = freePart
       .trim()
       .split('\n')
       .find((l) => l.startsWith('Mem:'));
@@ -105,15 +101,17 @@ export class MonitoringService {
     const ramUsed = Number(mem[2]) || 0;
     const ramAvailable = Number(mem[6]) || Number(mem[3]) || 0;
 
-    // Parse disk (df -B1 /)
-    const diskLine = dfOutput.trim().split('\n')[1] ?? '';
+    // Parse disk
+    const diskLine = dfPart.trim().split('\n')[1] ?? '';
     const disk = diskLine.trim().split(/\s+/);
     const diskTotal = Number(disk[1]) || 0;
     const diskUsed = Number(disk[2]) || 0;
     const diskAvail = Number(disk[3]) || 0;
 
+    const cpuPercent = parseFloat(cpuPart.trim()) || 0;
+
     return {
-      cpu: { usedPercent: Math.round(parseFloat(cpuOutput.trim()) || 0) },
+      cpu: { usedPercent: Math.round(cpuPercent) },
       ram: {
         total: ramTotal,
         used: ramUsed,
