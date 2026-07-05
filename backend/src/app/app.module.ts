@@ -5,6 +5,7 @@ import { AuthModule } from '../auth/auth.module';
 import { ConnectionEntity } from '../connections/connection.entity';
 import { ConnectionsModule } from '../connections/connections.module';
 import { ServerModule } from '../server/service.module';
+import { TerminalModule } from '../terminal/terminal.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
@@ -28,6 +29,7 @@ import { AppService } from './app.service';
     AuthModule,
     ConnectionsModule,
     ServerModule,
+    TerminalModule,
   ],
   controllers: [AppController],
   providers: [AppService],

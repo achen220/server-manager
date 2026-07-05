@@ -16,7 +16,8 @@ export interface sshConnectionParams {
   host: string;
   port: number;
   username: string;
-  password: string;
+  password?: string;
+  privateKey?: string;
 }
 
 @Controller('server')
@@ -32,12 +33,14 @@ export class ServerController {
     const userId = req.user.sub;
 
     const res = await this.connectionService.getCredentials(id, userId);
-    const { host, password, port, username } = res;
+    const { host, port, username, authType, password, privateKey } = res;
     await this.serverService.remoteConnectionSSH(userId, {
       host,
-      password: password ?? '',
       port,
       username,
+      ...(authType === 'key'
+        ? { privateKey: privateKey ?? '' }
+        : { password: password ?? '' }),
     });
   }
 

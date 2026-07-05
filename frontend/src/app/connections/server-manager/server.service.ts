@@ -10,12 +10,21 @@ export class ServerService {
   private readonly base = `${environment.apiUrl}/server`;
 
   initSSH(id: string) {
-    // const { host, username, password, port } = connectionInfo;
-    // TODO: make subscription in component not service
     return this.http.post(`${this.base}/ssh-connection`, { id });
   }
 
   activeSSHUsers(): Observable<ActiveSSHInfo[]> {
     return this.http.get<ActiveSSHInfo[]>(`${this.base}/ssh-users`);
+  }
+
+  addSshUser(body: {
+    username: string;
+    password: string;
+    isAdmin: boolean;
+  }): Observable<{ success: boolean; username: string }> {
+    return this.http.post<{ success: boolean; username: string }>(
+      `${this.base}/add-ssh-user`,
+      body,
+    );
   }
 }

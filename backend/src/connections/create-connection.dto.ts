@@ -24,7 +24,7 @@ export class CreateConnectionDto {
 
   @IsOptional()
   @IsString()
-  privateKeyPath?: string;
+  privateKey?: string;
 
   @IsOptional()
   @IsString()

@@ -31,6 +31,9 @@ export class ConnectionsService {
     if (data.password) {
       data.password = this.encryption.encrypt(data.password);
     }
+    if (data.privateKey) {
+      data.privateKey = this.encryption.encrypt(data.privateKey);
+    }
     const conn = this.repo.create(data);
     return this.repo.save(conn);
   }
@@ -41,11 +44,15 @@ export class ConnectionsService {
     userId: string,
   ): Promise<ConnectionEntity> {
     const conn = await this.findOne(id, userId);
-    // Only overwrite password if a new one was provided
     if (!dto.password) {
       delete dto.password;
     } else {
       dto.password = this.encryption.encrypt(dto.password);
+    }
+    if (!dto.privateKey) {
+      delete dto.privateKey;
+    } else {
+      dto.privateKey = this.encryption.encrypt(dto.privateKey);
     }
     Object.assign(conn, dto);
     return this.repo.save(conn);
@@ -61,11 +68,19 @@ export class ConnectionsService {
     const conn = await this.repo
       .createQueryBuilder('c')
       .addSelect('c.password')
+      .addSelect('c.privateKey')
       .where('c.id = :id AND c.userId = :userId', { id, userId })
       .getOne();
     if (!conn) throw new NotFoundException(`Connection ${id} not found`);
     if (conn.password) {
       conn.password = this.encryption.decrypt(conn.password);
+    }
+    if (conn.privateKey) {
+      try {
+        conn.privateKey = this.encryption.decrypt(conn.privateKey);
+      } catch {
+        conn.privateKey = undefined;
+      }
     }
     return conn;
   }

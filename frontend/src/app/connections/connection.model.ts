@@ -5,7 +5,7 @@ export interface Connection {
   port: number;
   username: string;
   authType: 'password' | 'key';
-  privateKeyPath?: string;
+  privateKey?: string;
   description?: string;
   createdAt: string;
   updatedAt: string;
@@ -18,6 +18,6 @@ export interface CreateConnectionRequest {
   username: string;
   authType: 'password' | 'key';
   password?: string;
-  privateKeyPath?: string;
+  privateKey?: string;
   description?: string;
 }

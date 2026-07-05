@@ -151,14 +151,15 @@
       </div>
     } @else {
       <div class="field">
-        <label for="keyPath">Private Key Path</label>
-        <input
-          pInputText
-          id="keyPath"
-          formControlName="privateKeyPath"
-          placeholder="~/.ssh/id_rsa"
+        <label for="privateKey">Private Key Content</label>
+        <textarea
+          pTextarea
+          id="privateKey"
+          formControlName="privateKey"
+          placeholder="Paste your private key (-----BEGIN ... -----END ...)"
+          rows="5"
           class="w-full"
-        />
+        ></textarea>
       </div>
     }
 

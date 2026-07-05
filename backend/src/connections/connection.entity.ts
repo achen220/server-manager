@@ -30,8 +30,9 @@ export class ConnectionEntity {
   @Column({ nullable: true, select: false })
   password?: string;
 
-  @Column({ nullable: true })
-  privateKeyPath?: string;
+  /** Encrypted SSH private key content — never returned in list/get */
+  @Column({ nullable: true, select: false, name: 'private_key_path' })
+  privateKey?: string;
 
   @Column({ nullable: true })
   description?: string;

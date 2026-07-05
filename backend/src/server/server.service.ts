@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Client } from 'ssh2';
 import { sshConnectionParams } from './server.controller';
@@ -16,12 +20,23 @@ export class ServerService {
   private getClient(userId: string): Client {
     const client = this.clients.get(userId);
     if (!client) {
-      throw new NotFoundException('No active SSH connection. Please connect first.');
+      throw new NotFoundException(
+        'No active SSH connection. Please connect first.',
+      );
     }
     return client;
   }
 
-  private executeCommand(userId: string, command: string, stdinData?: string): Promise<string> {
+  /** Exposed for the WebSocket terminal gateway. */
+  getClientPublic(userId: string): Client | undefined {
+    return this.clients.get(userId);
+  }
+
+  private executeCommand(
+    userId: string,
+    command: string,
+    stdinData?: string,
+  ): Promise<string> {
     return new Promise((resolve, reject) => {
       const client = this.getClient(userId);
       client.exec(command, (err, stream) => {
@@ -52,7 +67,10 @@ export class ServerService {
     });
   }
 
-  remoteConnectionSSH(userId: string, params: sshConnectionParams): Promise<void> {
+  remoteConnectionSSH(
+    userId: string,
+    params: sshConnectionParams,
+  ): Promise<void> {
     const existing = this.clients.get(userId);
     if (existing) {
       existing.end();
@@ -75,7 +93,14 @@ export class ServerService {
         .on('close', () => {
           this.clients.delete(userId);
         })
-        .connect({ host, port, username, password });
+        .connect({
+          host,
+          port,
+          username,
+          ...(params.privateKey
+            ? { privateKey: Buffer.from(params.privateKey) }
+            : { password: params.password }),
+        });
     });
   }
 
@@ -150,13 +175,25 @@ export class ServerService {
       .filter((u) => u.hasValidShell);
   }
 
-  async addSshUser(userId: string, username: string, password: string, isAdmin: boolean) {
+  async addSshUser(
+    userId: string,
+    username: string,
+    password: string,
+    isAdmin: boolean,
+  ) {
     if (!/^[a-z_][a-z0-9_-]{0,31}$/.test(username)) {
       throw new BadRequestException('Invalid username format');
     }
 
-    await this.executeCommand(userId, `sudo useradd -m -s /bin/bash -- ${username}`);
-    await this.executeCommand(userId, `sudo chpasswd`, `${username}:${password}\n`);
+    await this.executeCommand(
+      userId,
+      `sudo useradd -m -s /bin/bash -- ${username}`,
+    );
+    await this.executeCommand(
+      userId,
+      `sudo chpasswd`,
+      `${username}:${password}\n`,
+    );
 
     if (isAdmin) {
       await this.executeCommand(userId, `sudo usermod -aG sudo -- ${username}`);

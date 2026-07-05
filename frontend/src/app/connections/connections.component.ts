@@ -13,6 +13,7 @@ import { PasswordModule } from 'primeng/password';
 import { SelectButtonModule } from 'primeng/selectbutton';
 import { TagModule } from 'primeng/tag';
 import { ToastModule } from 'primeng/toast';
+import { TextareaModule } from 'primeng/textarea';
 import { LoadingComponent } from '../components/loading.component';
 import { Connection } from './connection.model';
 import { ConnectionsApiService } from './connections.api.service';
@@ -29,6 +30,7 @@ import { EmptyConnectionsComponent } from './empty-connections/empty-connection.
     DialogModule,
     InputTextModule,
     InputNumberModule,
+    TextareaModule,
     PasswordModule,
     SelectButtonModule,
     TagModule,
@@ -66,7 +68,7 @@ export class ConnectionsComponent implements OnInit {
     username: ['', Validators.required],
     authType: ['password' as 'password' | 'key', Validators.required],
     password: [''],
-    privateKeyPath: [''],
+    privateKey: [''],
     description: [''],
   });
 
@@ -112,8 +114,8 @@ export class ConnectionsComponent implements OnInit {
       authType: val.authType!,
       password:
         val.authType === 'password' ? val.password || undefined : undefined,
-      privateKeyPath:
-        val.authType === 'key' ? val.privateKeyPath || undefined : undefined,
+      privateKey:
+        val.authType === 'key' ? val.privateKey || undefined : undefined,
       description: val.description || undefined,
     };
 

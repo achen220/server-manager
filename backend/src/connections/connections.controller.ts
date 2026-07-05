@@ -29,6 +29,11 @@ export class ConnectionsController {
     return this.svc.findAll(req.user.sub);
   }
 
+  @Get(':id')
+  findOne(@Param('id') id: string, @Request() req: AuthRequest) {
+    return this.svc.findOne(id, req.user.sub);
+  }
+
   @Post()
   create(@Body() dto: CreateConnectionDto, @Request() req: AuthRequest) {
     return this.svc.create(dto, req.user.sub);

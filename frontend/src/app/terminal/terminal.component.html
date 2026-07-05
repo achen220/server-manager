@@ -2,9 +2,14 @@
   <div class="terminal-header">
     <div class="header-left">
       <i class="pi pi-server"></i>
-      <span
-        >Connected to <strong>{{ connectionName }}</strong></span
-      >
+      <span>{{ name() }}</span>
+      @if (status() === 'connecting') {
+        <span class="status-badge connecting">Connecting&hellip;</span>
+      } @else if (status() === 'connected') {
+        <span class="status-badge connected">Connected</span>
+      } @else {
+        <span class="status-badge closed">Disconnected</span>
+      }
     </div>
     <p-button
       label="Disconnect"
@@ -14,11 +19,5 @@
       (onClick)="disconnect()"
     />
   </div>
-
-  <div class="terminal-body">
-    <p class="placeholder-text">
-      <i class="pi pi-check-circle" style="color: var(--p-green-500)"></i>
-      SSH connection established. Terminal coming soon.
-    </p>
-  </div>
+  <div class="terminal-body" #termContainer></div>
 </div>

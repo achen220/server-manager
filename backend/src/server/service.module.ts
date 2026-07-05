@@ -7,5 +7,6 @@ import { SambaService } from './services/samba.services';
   imports: [ConnectionsModule],
   controllers: [ServerController],
   providers: [ServerService, SambaService],
+  exports: [ServerService],
 })
 export class ServerModule {}

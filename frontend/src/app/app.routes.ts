@@ -25,6 +25,13 @@ export const appRoutes: Route[] = [
     canActivate: [authGuard],
   },
 
+  {
+    path: 'connections/:id/terminal',
+    loadComponent: () =>
+      import('./terminal/terminal.component').then((m) => m.TerminalComponent),
+    canActivate: [authGuard],
+  },
+
   { path: '', redirectTo: 'login', pathMatch: 'full' },
   { path: '**', redirectTo: 'login' },
 ];
