@@ -22,6 +22,7 @@ export const appRoutes: Route[] = [
       import('./connections/server-manager/server.manager.component').then(
         (m) => m.ServerManagerComponent,
       ),
+    canActivate: [authGuard],
   },
 
   { path: '', redirectTo: 'login', pathMatch: 'full' },

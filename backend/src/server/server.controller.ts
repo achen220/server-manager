@@ -33,23 +33,23 @@ export class ServerController {
 
     const res = await this.connectionService.getCredentials(id, userId);
     const { host, password, port, username } = res;
-    const resConnection = await this.serverService.remoteConnectionSSH({
+    await this.serverService.remoteConnectionSSH(userId, {
       host,
       password: password ?? '',
       port,
       username,
     });
-    console.log({ resConnection });
   }
 
   @Get('ssh-users')
-  async sshUsers() {
-    return await this.serverService.sshUsers();
+  async sshUsers(@Request() req: AuthRequest) {
+    return await this.serverService.sshUsers(req.user.sub);
   }
 
   @Post('add-ssh-user')
-  async addSshUser(@Body() body: AddSshUserDto) {
+  async addSshUser(@Body() body: AddSshUserDto, @Request() req: AuthRequest) {
     return await this.serverService.addSshUser(
+      req.user.sub,
       body.username,
       body.password,
       body.isAdmin,

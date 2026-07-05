@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Client } from 'ssh2';
 import { sshConnectionParams } from './server.controller';
@@ -6,92 +6,89 @@ import { SambaService } from './services/samba.services';
 
 @Injectable()
 export class ServerService {
-  client: Client;
+  private readonly clients = new Map<string, Client>();
 
   constructor(
     private readonly configService: ConfigService,
     private readonly sambaService: SambaService,
-  ) {
-    this.client = new Client();
-    this.client.on('ready', () => {
-      console.log('Client :: ready');
-      this.client.exec('uptime', (err, stream) => {
-        if (err) throw err;
-        stream
-          .on('close', (code: string, signal: string) => {
-            console.log(
-              'Stream :: close :: code: ' + code + ', signal: ' + signal,
-            );
-          })
-          .on('data', (data: string) => {
-            console.log('STDOUT: ' + data);
-          })
-          .stderr.on('data', (data) => {
-            console.log('STDERR: ' + data);
-          });
-      });
-    });
+  ) {}
+
+  private getClient(userId: string): Client {
+    const client = this.clients.get(userId);
+    if (!client) {
+      throw new NotFoundException('No active SSH connection. Please connect first.');
+    }
+    return client;
   }
 
-  private executeCommand(command: string): Promise<string> {
+  private executeCommand(userId: string, command: string, stdinData?: string): Promise<string> {
     return new Promise((resolve, reject) => {
-      this.client.exec(command, (err, stream) => {
+      const client = this.getClient(userId);
+      client.exec(command, (err, stream) => {
         if (err) return reject(err);
 
         let stdout = '';
         let stderr = '';
 
+        if (stdinData) {
+          stream.stdin.write(stdinData);
+          stream.stdin.end();
+        }
+
         stream
           .on('close', (code: number) => {
-            console.log('closing');
             if (code !== 0 && stderr) {
               return reject(new Error(stderr));
             }
             resolve(stdout);
           })
           .on('data', (data: Buffer) => {
-            console.log(`Executing commands: ${command}`);
             stdout += data.toString();
           })
           .stderr.on('data', (data: Buffer) => {
-            console.log('Command failed on execution');
             stderr += data.toString();
           });
       });
     });
   }
 
-  remoteConnectionSSH(params: sshConnectionParams): Promise<void> {
-    const { host, port, username, password } = params;
+  remoteConnectionSSH(userId: string, params: sshConnectionParams): Promise<void> {
+    const existing = this.clients.get(userId);
+    if (existing) {
+      existing.end();
+      this.clients.delete(userId);
+    }
 
     return new Promise((resolve, reject) => {
-      this.client
+      const client = new Client();
+      const { host, port, username, password } = params;
+
+      client
         .on('ready', () => {
-          console.log('SSH connection successful');
+          this.clients.set(userId, client);
           resolve();
         })
         .on('error', (err) => {
-          console.error('SSH connection failed:', err.message);
+          this.clients.delete(userId);
           reject(err);
         })
-        .connect({
-          host,
-          port,
-          username,
-          password,
-        });
+        .on('close', () => {
+          this.clients.delete(userId);
+        })
+        .connect({ host, port, username, password });
     });
   }
 
-  async sshUsers() {
+  async sshUsers(userId: string) {
     const [passwdOutput, whoOutput, lastOutput, sudoOutput] = await Promise.all(
       [
         this.executeCommand(
+          userId,
           `awk -F: '$3 >= 1000 && $3 != 65534 {print $1":"$3":"$4":"$6":"$7}' /etc/passwd`,
         ),
-        this.executeCommand('who'),
-        this.executeCommand('last -n 50 --time-format iso'),
-        this.executeCommand('getent group sudo wheel admin'), // sudo group members
+        this.executeCommand(userId, 'who'),
+        this.executeCommand(userId, 'last -n 50 --time-format iso'),
+        this.executeCommand(userId, 'getent group sudo wheel admin'),
       ],
     );
 
@@ -153,16 +150,16 @@ export class ServerService {
       .filter((u) => u.hasValidShell);
   }
 
-  async addSshUser(username: string, password: string, isAdmin: boolean) {
-    // Create user with home dir and bash shell
-    await this.executeCommand(`sudo useradd -m -s /bin/bash ${username}`);
+  async addSshUser(userId: string, username: string, password: string, isAdmin: boolean) {
+    if (!/^[a-z_][a-z0-9_-]{0,31}$/.test(username)) {
+      throw new BadRequestException('Invalid username format');
+    }
 
-    // Set password (pipe via stdin)
-    await this.executeCommand(`echo "${username}:${password}" | sudo chpasswd`);
+    await this.executeCommand(userId, `sudo useradd -m -s /bin/bash -- ${username}`);
+    await this.executeCommand(userId, `sudo chpasswd`, `${username}:${password}\n`);
 
-    // Add to sudo group if admin
     if (isAdmin) {
-      await this.executeCommand(`sudo usermod -aG sudo ${username}`);
+      await this.executeCommand(userId, `sudo usermod -aG sudo -- ${username}`);
     }
 
     return { success: true, username };
